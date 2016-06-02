@@ -20,9 +20,9 @@
 
     <section class="main-content">
       <h3>
-<a id="what-is-csa" class="anchor" href="#what-is-csa" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>What is CSA?</h3>
+<a id="what-is-comprehensive-system-accounting" class="anchor" href="#what-is-comprehensive-system-accounting" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>What is Comprehensive System Accounting?</h3>
 
-<p>CSA is a set of C programs and shell scripts that provide methods for collecting per-process resource usage data, monitoring disk usage, and charging fees to specific login accounts. CSA takes this per-process accounting information and combines it by job identifier (jid) within system boot uptime periods.</p>
+<p>CSA is a more extensive alternative to existing Linux process accounting packages. It exists as a set of C programs and shell scripts that provide methods for collecting per-process resource usage data, monitoring disk usage, and charging fees to specific login accounts. CSA takes this per-process accounting information and combines it by job identifier (jid) for tracking a group of related processes within system boot uptime periods.</p>
 
 <p>CSA provides the following features which are not available with other Linux accounting packages:</p>
 
@@ -37,11 +37,9 @@
 <li>Configurable parameters</li>
 </ul>
 
-<p>How is this different from other Linux accounting packages? Linux has a form of process accounting which is similar to SysV/BSD basic process accounting. The set of Linux accounting commands provide similar functionality but have different names and options.</p>
+<p>How else this different from other Linux accounting packages? Linux has a form of process accounting which is similar to SysV/BSD basic process accounting. The set of Linux accounting commands provide similar functionality but have different names and options.</p>
 
-<p>The Linux kernel itself monitors the size of the accounting records file (pacct). CSA monitoring of file size takes place outside of the kernel.</p>
-
-<p>Currently, Linux has process accounting which provides the following per process resource usage information. However, the characters read/written and blocks read/written are hardcoded to zero.</p>
+<p>While the Linux kernel itself monitors the size of the accounting records file (pacct), CSA monitoring of file size takes place outside of the kernel.</p>
 
 <p>Linux CSA is a fork of the original joint effort between Los Alamos National Laboratory (LANL) and SGI where the CRAY IRIX CSA tool was first ported to the Linux Operating System</p>
 
