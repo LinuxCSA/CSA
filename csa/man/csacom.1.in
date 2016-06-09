@@ -1,0 +1,537 @@
+.\"
+.\" (C) 2000 Silicon Graphics, Inc.  All Rights Reserved.
+.\" (C) 2004-2007 Silicon Graphics, Inc.  All Rights Reserved.
+.\"
+.\" This documentation supports a 
+.\" program that is free software; you can redistribute it and/or modify it 
+.\" under the terms of version 2 of the GNU General Public License as 
+.\" published by the Free Software Foundation.
+.\" 
+.\" The documentation that supports
+.\" this program is distributed in the hope that it will be useful, but 
+.\" WITHOUT ANY WARRANTY; without even the implied warranty of 
+.\" MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+.\" 
+.\" Further, this documentation and the software it
+.\" supports, are distributed without any warranty that it is 
+.\" free of the rightful claim of any third person regarding infringement
+.\" or the like.  Any license provided herein, whether implied or 
+.\" otherwise, applies only to this software file.  Patent licenses, if 
+.\" any, provided herein do not apply to combinations of this program with 
+.\" other software, or any other product whatsoever.
+.\"
+.\" You should have received a copy of the GNU General Public License along 
+.\" with this program; if not, write the Free Software Foundation, Inc., 59
+.\" Temple Place - Suite 330, Boston MA 02111-1307, USA.
+.\"
+.\" Contact information:  Silicon Graphics, Inc., 1140 East Arques Avenue,
+.\" Sunnyvale, CA  94085, or:
+.\" 
+.\" http://www.sgi.com 
+.\" 
+.\" For further information regarding this notice, see: 
+.\"
+.\" http://oss.sgi.com/projects/GenInfo/NoticeExplan
+.\"
+.TH csacom 1
+.SH NAME
+csacom \- searches and prints the Comprehensive System Accounting (CSA) process accounting files
+.SH SYNOPSIS
+csacom\f1
+[\f4-b\f1]
+[\f4-c\f1]
+[\f4-f\f1]
+[\f4-h\f1]
+[\f4-i\f1]
+[\f4-k\f1]
+[\f4-m\f1]
+[\f4-p\f1]
+[\f4-r\f1]
+[\f4-t\f1]
+[\f4-v\f1]
+[\f4-w[w]\f1]
+[\f4-A\f1]
+[\f4-G\f1]
+[\f4-L\f1]
+[\f4-J\f1]
+[\f4-M\f1]
+[\f4-N\f1]
+[\f4-P\f1]
+[\f4-T\f1]
+[\f4-U\f1]
+[\f4-V\f1]
+[\f4-W\f1]
+[\f4-X\f1]
+[\f4-Y\f1]
+[\f4-Z\f1]
+[\f4-e\f1\ \f2existtime\f1]
+[\f4-g\f1\ \f2grpname\f1]
+[\f4-j\f1\ \f2jid\f1]
+[\f4-n\f1\ \f2pattern\f1]
+[\f4-o\f1\ \f2outfile\f1]
+[\f4-s\f1\ \f2starttime\f1]
+[\f4-u\f1\ \f2usrname\f1]
+[\f4-C\f1\ \f2second\f1]
+[\f4-E\f1\ \f2endtime\f1]
+[\f4-H\f1\ \f2hog\f1]
+[\f4-I\f1\ \f2character\f1]
+[\f4-O\f1\ \f2second\f1]
+[\f4-S\f1\ \f2starttime\f1]
+[\f2files\f1]
+.SH DESCRIPTION
+The \f4csacom\f1 utility reads data \f2files\f1,
+in the format defined in the \f4csa.h\f1 file
+and writes selected records to standard output.
+You can specify \f2files\f1 to be read;
+otherwise, the standard input, the file specified
+by the \f4PACCT_FILE\f1 parameter in the \f4@sysconfdir@/csa.conf\f1 file,
+or the \f4@csalocalstatedir@/day/pacct\f1 file is read.
+Each record represents the execution of one process.
+.PP
+Memory and I/O fields are printed as zero if memory and
+I/O record accounting are turned off.
+.PP
+The \f4csacom\f1 utility accepts three types of options:
+output file options, selection options, and printing options.
+.SS Output Options
+.TP 11
+\f4-o\f1\ \f2outfile\f1
+Copies the chosen process
+records in the input data
+format to the specified output file \f2outfile\f1 which
+is created in binary format. Stops
+standard output from printing.
+The records can be printed to standard output later by
+providing \f2outfile\f1 as \f2files\f1.
+.SS Selection Options
+.TP 11
+\f4-e\f1\ \f2existtime\f1
+Chooses processes existing at or
+before \f2existtime\f1, given in the format
+[\f4D\f2dd\f1:]\f2hh\f1[:\f2mm\f1[:\f2ss\f1]].
+(See EXAMPLES.)
+The letter \f4D\f1 flags the presence of the relative
+day offset parameter,
+which allows \f4csacom\f1 to select records from a previous day.
+(To determine the day offset, use the \f4-W\f1 option.)
+.TP
+\f4-g\f1\ \f2grpname\f1
+Chooses only processes belonging
+to \f2grpname\f1. You can designate
+the group name using either the
+group ID or group name.
+.TP
+\f4-j\f1\ \f2jid\f1
+Selects only processes that have a job ID that
+matches the \f2jid\f1 argument.
+The \f2jid\f1 argument is expected in hexadecimal.
+The "0x" prefix or the "0X" prefix are optional.
+.TP
+\f4-n\f1\ \f2pattern\f1
+Selects only commands matching \f2pattern\f1
+that may be a regular expression, as in \f4regcmp\f1(3G),
+except that a \f4+\f1 symbol indicates one or more occurrences.
+.TP
+\f4-s\f1\ \f2existtime\f1
+Chooses processes existing at or after
+\f2existtime\f1 given in the format
+[\f4D\f2dd\f1:]\f2hh\f1[:\f2mm\f1[:\f2ss\f1]].
+See the -e option and EXAMPLES for
+more information on this format.
+Using the same time for
+both the \f4-s\f1 and \f4-e\f1 options shows
+the processes that existed at
+the existtime.
+.TP
+\f4-u\f1\ \f2usrname\f1
+Chooses only processes that belong
+to \f2usrname\f1. This can be specified
+by a user ID, a login name that is
+then converted to a user ID, a
+\f4#\f1 symbol designating only those
+processes executed with superuser
+privileges, or a question mark(\f4?\f1)
+designating only those processes
+associated with an unknown user ID.
+To avoid interpretation by the shell,
+you must escape the question mark.
+.TP
+\f4-C\f1\ \f2second\f1
+Chooses exclusively those processes
+that have total CPU time (system time
+plus user time) exceeding \f2second\f1 seconds.
+.TP
+\f4-E\f1\ \f2endtime\f1
+Chooses processes terminating at or
+before \f2endtime\f1, given in the
+format
+[\f4D\f2dd\f1:]\f2hh\f1[:\f2mm\f1[:\f2ss\f1]].
+See the \f4-e\f1 option and EXAMPLES for
+more information on this format.
+.TP
+\f4-H\f1\ \f2hog\f1
+Chooses processes that go beyond
+\f2hog\f1. The variable \f2hog\f1 is the
+"hog factor" described in the
+description for printing option \f4-h\f1.
+.TP
+\f4-I\f1\ \f2character\f1
+Chooses only processes that transfer more characters than
+the number specified by \f2character\f1.
+Processes that do not have I/O information 
+(I/O record accounting turned off) are not selected.
+.TP
+\f4-O\f1\ \f2second\f1
+Chooses exclusively processes with
+CPU system time exceeding \f2second\f1
+seconds.
+.TP
+\f4-S\f1\ \f2starttime\f1
+Chooses processes that start at
+or after starttime, given in the
+format
+[\f4D\f2dd\f1:]\f2hh\f1\[:\f2mm\f1[:\f2ss\f1]].
+See the \f4-e\f1 option and EXAMPLES for
+more information on this format.
+.SS Printing Options
+.TP
+\f4-b\f1
+Shows the latest command first
+by reading backwards. This
+option has no effect when the stardard
+input is read.
+The \f4-b\f1 and \f4-W\f1 options are mutually exclusive.
+.TP
+\f4-c\f1
+Prints the number of read and write system calls, separately.
+.TP
+\f4-f\f1
+Prints the process accounting flags in hexadecimal
+followed by the exit status in decimal.
+The process accounting flags are as follows. Compound statuses
+are specified as the logical OR of individual flags.
+.RS 7
+.TP 14
+\f401\f1
+Process forked but no exec is invoked.
+.TP 14
+\f402\f1
+Process used super-user privileges.
+.TP 14
+\f404\f1
+Process was checkpointed.
+.TP 14
+\f408\f1
+Process produced a core file.
+.TP 14
+\f410\f1
+Process killed by a signal.
+.TP 14
+\f420\f1
+More accounting records for this process.
+.RE
+.TP
+\f4-h\f1
+Prints the fraction of total available CPU time
+consumed by the process during its execution.
+This is known as the "hog factor" and is computed as follows:
+.PP
+.RS 14
+(total CPU\ time)/(elapsed\ time)
+.RE
+.TP
+\f4-i\f1
+Prints the number of characters read and written, separately.
+.TP
+\f4-k\f1
+Prints total kcore-minutes and kvirtual-minutes.
+These are the average memory sizes of the process if its
+execution time is normalized to one minute.
+.TP
+\f4-m\f1
+Prints mean core size and mean virtual memory size.
+These are the average memory sizes 
+of the process while executing.
+This is the default print option.
+If you do not specify any other print options, \f4-m\f1 is selected.
+If you do specify other print options and you want mean memory sizes to print,
+you must specify \f4-m\f1.
+.TP
+\f4-p\f1
+Prints process ID and parent process ID.
+.TP
+\f4-r\f1
+Prints the CPU factor which
+is (user time/(system time plus user time)).
+.TP
+\f4-t\f1
+Prints separate system times and separate user CPU times,
+as well as CPU real and virtual run times.
+.TP
+\f4-v\f1
+Excludes column headings from the output.
+.TP
+\f4-w[w]\f1
+Prints the CPU, block I/O, and swap in delay totals. 
+Specify a second \f4w\f1 to print the delay counts as well.
+.TP
+\f4-A\f1
+Prints the array session handle. (deferred)
+.TP
+\f4-G\f1
+Prints the numeric group ID.
+.TP
+\f4-L\f1
+Prints the accounting configuration records that report events,
+such as when accounting was started and stopped,
+and when accounting files were switched.
+If no other printing option is selected with \f4-L\f1,
+\f4-m\f1 is assumed.
+.TP
+\f4-J\f1
+Prints a column with job IDs.
+.TP
+\f4-M\f1
+Prints the high-water core memory, virtual memory usage values, 
+and the number of minor and major page faults.
+.TP
+\f4-N\f1
+Prints the \f4nice\f1 field value and  scheduling policy. 
+The \f4nice\f1 value is the scheduling priority
+for use of CPU time.
+The range of values typically is 0 through 39,
+with 0 being super user and higher \f4nice\f1
+values being lower priorities.
+Scheduling policy is the scheduling mode of a shared group.
+.TP
+\f4-P\f1
+Prints the project ID. (deferred)
+.TP
+\f4-T\f1
+Prints the start-of-job and end-of-job data.
+Ignores all other print options, except the \f4-b\f1, \f4-v\f1, and \f4-L\f1 options.
+.TP
+\f4-U\f1
+Shows all user IDs in numeric format.
+.TP
+\f4-V\f1
+Combines the I/O and delay values.
+This option must be specified with the \f4-c\f1, \f4-i\f1, or \f4-w\f1 option.
+.TP
+\f4-W\f1
+Prints the start and end dates and each date change found in the file.
+Ignores all other print and selection options, except the \f4-L\f1 option.
+This option is useful if your data spans more than 1 day
+(that is, not 00:00 to 00:00)
+and if more than 1 day of data is present in the \f4pacct\f1 file.
+The day number of the date change is printed
+and can be used with the time selects.
+(See Example 2.)
+The \f4-b\f1 and \f4-W\f1 options are mutually exclusive.
+.TP
+\f4-X\f1
+Prints the process start date.
+The date follows the last data printed on the line
+and will be in the format:  \f2day month date year\f1
+(for example, \f4Sat Feb 12 2000\f1).
+.TP
+\f4-Y\f1
+Prints the process end date.
+The date follows the last data printed on the line
+and will be in the format:  \f2day month date year\f1
+(for example, \f4Sat Feb 12 2000\f1).
+.TP
+\f4-Z\f1
+Skips (does not print) first seven fields
+(must be specified with one of the print options
+(\f4-cfhikmprtwAGJMNPXY\f1)).
+.TP
+\f2files\f1
+Input file(s) you specify.
+These are one or more of the
+\f4@csalocalstatedir@/day/pacct\f1* files.
+If you do not specify \f2files\f1, and if the
+standard input is not associated with a terminal
+or \f4/dev/null\f1 (as is the case when using & in the shell),
+the standard input is read.
+Otherwise, the file specified by the \f4PACCT_FILE\f1 parameter 
+in the \f4@sysconfdir@/csa.conf\f1 file is read.
+If that parameter does not exist,
+then \f4@csalocalstatedir@/day/pacct\f1 is read.
+Therefore, when executing \f4csacom\f1 using the workload management product, you
+must specify \f2files\f1.
+.RS 9
+.PP
+Any file arguments specified are read in their respective order.
+Each file is usually read forward; that is, in chronological order
+by process completion time.
+The \f4@csalocalstatedir@/acct/day/pacct\f1 file
+is the current file to be examined.
+.RE
+.PP
+.nf
+.ft 7
+.sp .8v
+The output fields are as follows:
+--------------------------------------------------------------------
+Field Name              Option  Definition
+--------------------------------------------------------------------
+.sp .8v
+COMMAND NAME            ! Z     ASCII command name OR #command name if
+                                executed with super-user privileges
+USER                    ! Z     ASCII user name
+                        ! Z     Numeric user ID
+                        && -U
+START TIME              ! Z     Start time of process in clock format
+                                (that is, 10:01:25)
+END TIME                ! Z     End time of process in clock format (that
+                                is, 10:10:15)
+REAL (SECS)             ! Z     Elapsed time of process in seconds
+CPU (SECS)       ! Z && !-t     CPU time used by the process in seconds
+                                OR
+SYSTEM (SECS)           -t      System time used by the process in
+                                seconds
+USER (SECS)             -t      User time used by the process in seconds
+CPU RUN TIME            -t      CPU real and virtual run times in seconds
+
+CHARS READ              -i      Number of characters read
+CHARS WRITTEN           -i      Number of characters written
+CPU FACTOR              -r      User time divided by the CPU time
+HOG FACTOR              -h      CPU time divided by the elapsed time
+CHARS TRNSFD            -iV     Number of characters transferred
+CPU DELAY               -w[w]   CPU delay total (and count) in seconds
+BLOCK I/O DELAY         -w[w]   Block I/O delay total (and count) in seconds
+SWAP IN DELAY           -w[w]   Swap in delay total (and count) in seconds
+DELAY (SECS)            -wV     Sum of CPU, block I/O, and swap in delays
+.sp .8v
+MEAN CORE SIZE (KB)     -m      Average amount of core memory used by the
+                                process in kilobytes
+MEAN VIRT SIZE (KB)     -m      Average amount of virtual memory used by the
+                                process in kilobytes
+KCORE MIN (KB)          -k      Amount of core memory used by the process
+                                in kilobytes * minutes
+KVIRTUAL MIN (KB)       -k      Amount of virtual memory used by the process
+                                in kilobytes * minutes
+F STAT                  -f      F is the process accounting flags in hexadecimal.
+                                STAT is the exit condition in decimal (value
+                                from exit() system call).  Signal number: 0
+                                means manual exit; 08 means core dump.
+.sp .8v
+JOB ID                  -J      Job identifier
+ARRAY SESSION HANDLE    -A      Array session identifier
+PROJECT ID              -P      Project identifier
+GROUP ID                -G      Group identifier
+LOGICAL READS           -c      Number of read system calls
+LOGICAL WRITES          -c      Number of write system calls
+LOGICAL REQS            -cV     Number of logical I/O requests
+                                (combined read/write system calls)
+.sp .8v
+PID                     -p      Process identifier
+PPID                    -p      Parent process identifier
+.sp .8v
+HIMEM (KBYTES) CORE     -M      High-water core memory usage value in
+                                kilobytes
+HIMEM (KBYTES) VIRTUAL  -M      High-water virtual memory usage value in
+                                kilobytes
+.sp .8v
+MINOR FAULTS            -M      Number of minor faults
+MAJOR FAULTS            -M      Number of major faults
+NICE                    -N      Nice value of the process
+SCHED DISC              -N      Scheduling policy
+.sp .8v
+TIME                    -T      Time of the event in clock format
+                                (that is, 10:01:25)
+EVENT                   -T      Event that caused the accounting record
+                                to be written (start-of-job or end-of-job)
+CORE_HIMEM              -T      Job high-water core memory usage value
+                                in kilobytes
+VIRT_HIMEM              -T      Job high-water virtual memory usage value
+.sp .8v
+PROCESS START DATE      -X     Date that the process started in ctime
+                               format
+PROCESS END DATE        -Y     Date that the process ended in ctime
+                               format
+.ft 1
+.fi
+.PP
+.SH NOTES
+The  \f4csacom\f1 command only
+reports on processes that have
+terminated. If you want infomration
+on active processes, use the
+ps(1) command.
+The \f4csacom\f1 command does not print 
+the daemon accounting records in the data files.
+.PP
+Time variables that exceed the
+present time are interpreted as
+occurring on the previous day.
+.SH EXAMPLES
+Example 1:  The following example generates a list of commands
+executed by user \f4samuel\f1 by examining all
+current process accounting files.
+The output includes system and user CPU times.
+In this example, if the \f4pacct\f1 files are not
+specified in the order shown, the commands may not be reported
+in ascending time order.
+.PP
+\f4csacom -u samuel -t @csalocalstatedir@/day/pacct?* @csalocalstatedir@/day/pacct\f1
+.PP
+Example 2:  The following example shows how,
+using the printing option \f4-W\f1,
+the day number of the date change is printed.
+.PP
+.nf
+.RS .5i
+.ft 4
+csacom -W
+.sp .8v
+Day  0:  Mon Apr  3 10:20:11 2000 - first record.
+Day  1:  Tue Apr  4 00:00:00 2000 - date change.
+Day  4:  Fri Apr  7 10:20:00 2000 - date change.
+Day  4:  Fri Apr  7 14:43:10 2000 - last record.
+.ft 1
+.RE
+.fi
+.PP
+Example 3:  The following example shows how you would select and
+print data from day 4, 10:20 A.M.
+in Example 2;
+you would use the same format to specify dates and times when using
+selection options \f4-e\f1, \f4-E\f1, \f4-s\f1, \f4-S\f1.
+.RS .5i
+.PP
+\f4csacom -s  D4:10:20 \f1
+.RE
+.PP
+Example 4:  The following example shows how you would select
+and print data from the \f4pacct\f1 file for an interval
+on day 4 between 8:00 A.M.
+and 4:00 P.M.
+.PP
+.RS .5i
+\f4csacom -S D4:08:00:00 -E D4:16:00:00 \f1
+.RE
+.SH FILES
+.TP 29
+\f4@sysconfdir@/csa.conf\f1
+Accounting configuration file
+.TP 
+\f4/etc/passwd\f1
+Password file that contains user names and user IDs
+.TP 
+\f4/etc/group\f1
+Group file that contains group names and group IDs
+.TP
+\f4@csalocalstatedir@/day/pacct\f1
+Process accounting file that contains
+resource usage information for processes running on the system
+.SH SEE ALSO
+csaaddc(8),
+csacms(8),
+csacon(8),
+csarun(8),
+csaswitch(8),
+nice(1),
+ps(1),
+su(1).

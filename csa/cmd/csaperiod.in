@@ -1,0 +1,607 @@
+#! /bin/sh
+#
+# Copyright (c) 2000-2002 Silicon Graphics, Inc and LANL  All Rights Reserved.
+# Copyright (c) 2007 Silicon Graphics, Inc  All Rights Reserved.
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as 
+# published by the Free Software Foundation; either version 2 of
+# the License, or (at your option) any later version.
+# 
+# This program is distributed in the hope that it would be useful, but 
+# WITHOUT ANY WARRANTY; without even the implied warranty of 
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details. 
+#
+# You should have received a copy of the GNU General Public License along 
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 59 Temple Place - Suite 330, Boston MA 02111-1307, USA.
+#
+# Contact information:  Silicon Graphics, Inc., 1140 East Arques Avenue, 
+# Sunnyvale, CA  94085, or:
+# 
+# http://www.sgi.com 
+#
+
+# csaperiod.sh:
+#	Perform periodic (non-daily) accounting.  Accumulate the daily
+#	condensed data files into 1 condensed data file.  The daily 
+#	files are removed, if desired.  A periodic report is also generated.
+#
+#	This script provides one "user exit": @sbindir@/csa.puser.
+#	This allows sites to tailor the periodic run of accounting to
+#	their specific needs by creating this script to perform any
+#	additional processing.  The standard output from the script
+#	will go to the csaperiod standard output file unless it is 
+#	redirected by the user script.
+#
+#	The /etc/csa.conf file is referenced to get values for some of the
+#	commonly changed parameters for the following commands:
+#	{ umask, chmod, chgrp, csacrep }.
+#	This will allow a site to modify the parameters used by these
+#	commands without changing the csaperiod script.
+#	The default action is to work as before.
+#
+#	Output files:
+#		periodic data file: ${FISCAL_DIR}/${PDDATA}.${DTIME}
+#		periodic report:    ${FISCAL_DIR}/${PDRPT}.${DTIME}
+#
+#	Options:
+#		-s MMDDhhmm	Start date and time
+#		-e MMDDhhmm	End data and time
+#		-r		Remove the daily data files when done
+#
+PROG=`basename $0`
+DATE="`date +'%m''%d'`"		# current date
+TIME="`date +'%H''%M'`"		# current time
+DTIME=${DATE}${TIME}
+
+PATH=@sbindir@:/bin:/usr/bin:/etc
+export PATH
+UMASK=`csagetconfig UMASK`      # umask value set for the script
+set +o noclobber
+
+#
+#	Accounting directory - change if necessary.
+#
+ACCT_DIR=@csalocalstatedir@		# accounting directory
+
+#
+#	These directory variables aren't generally changed.
+#
+DAY_DIR=${ACCT_DIR}/day			# current acct file directory
+NITE_DIR=${ACCT_DIR}/nite		# error message directory
+FISCAL_DIR=${ACCT_DIR}/fiscal		# periodic acct output directory
+SUM_DIR=${ACCT_DIR}/sum			# daily acct output directory
+
+#
+#	These file variables aren't generally changed.
+#
+ACTIVE=${NITE_DIR}/pdact	# logfile
+FEE=${DAY_DIR}/fee		# fee file (cacct.h format)
+LASTDATE=${NITE_DIR}/clastdate	# lastdate csarun was executed
+STATEFILE=${NITE_DIR}/statefile	# csarun statefile
+
+CACCT=cacct			# daily condensed data filename
+CMS=cms				# command summary filename
+DISKACCT=dacct			# disk accounting file (cacct.h format)
+PDDATA=pdacct			# periodic condensed data filename
+PDRPT=rprt			# periodic report filename
+
+#
+#	These csagetconfig variables aren't generally changed here.
+#	They are modified by making changes to the csa.conf file.
+#	csaperiod can use a local copy of acct_config by defining the
+#	symbol CSACONFIG to the file directory path.
+#	e.g. setenv CSACONFIG /etc/csa.conf.new
+#
+ACCT_FS=`csagetconfig ACCT_FS`		# filesystem containing ${ACCT_DIR}
+MIN_BLKS=`csagetconfig MIN_BLKS`	# minimum free blocks in ${ACCT_FS}
+FMAILLIST=`csagetconfig MAIL_LIST`	# Fatal error mail recipients
+WMAILLIST=`csagetconfig WMAIL_LIST` 	# Warning error mail recipients
+
+CSACREP=`csagetconfig CSACREP`		# csacrep call parameters {hucw}
+CHMOD=`csagetconfig CHMOD`		# chmod mask value for MK_DIR calls
+CHGRP=`csagetconfig CHGRP`		# chgrp group value for MK_DIR calls
+
+#
+#	These information variables aren't generally changed.
+#
+SYSNAME="`uname -n`"		# System name
+
+#
+#	Don't change these variables.
+#
+START_P=01010000		# default starting MMDDhhmm
+END_P=12312359			# default ending MMDDhhmm
+
+ERRFLAG=0			# getopt error flag
+CHECK_STATE=0			# don't check ${NITE_DIR}/statefile
+
+#
+#       The daily report can be customized by changing these messages.
+#
+#       The header messages are used in the pr command header and include
+#       the system name and release information.
+#       e.g. ${PURHDR} ${SYSNAME} ${BTWMSG}
+#       PERIODIC USAGE REPORT 
+#	porsche05 FROM 01/01 at 00:00 TO 12/31 at 23:59
+#
+ERRORMSG="************ ACCT ERRORS : see ${ACTIVE}.${DTIME} ************"
+USAGE="usage: ${0} [-s date_time] [-e date_time] [-r]"
+
+PURHDR="PERIODIC USAGE REPORT"
+CSRHDR="COMMAND SUMMARY"
+LLRHDR="LAST LOGIN REPORT"
+SITEHDR="SITE SUMMARY REPORT"
+
+#
+#	Function to handle Fatal error messages.
+#
+ERROR_EXIT () {
+	logger -p cron.notice "${ERRORMSG}" 2> /dev/null
+	(echo -e "${ERRORMSG}"; echo -e "\t\t${ACTIVE}.${DTIME}") \
+		| Mail -s "CSA ERRORS" ${FMAILLIST}
+	echo -e "`date` - Fatal error during csaperiod" >> ${ACTIVE}
+	echo -e "\tError: ${CSAERRMSG}" >> ${ACTIVE}
+	mv ${ACTIVE} ${ACTIVE}.${DTIME}
+	exit 1
+}
+
+#
+#	Function to handle Warning error messages.
+#
+ERROR_WARN () {
+	logger -p cron.notice "${ERRORMSG}" 2> /dev/null
+	echo -e "`date` - Warning error during csaperiod" >> ${ACTIVE}
+	echo -e "\tWarning: ${CSAERRMSG}" >> ${ACTIVE}
+	cp ${ACTIVE} ${ACTIVE}.${DTIME}
+}
+
+# start a new logfile
+nulladm ${ACTIVE}
+
+#       Make sure that the csaacct group can access output files
+if [ "${UMASK}" ]
+then
+	umask ${UMASK}
+else
+	umask 0017
+	echo -e "`date` - csaperiod: UMASK symbol is missing from the" >> ${ACTIVE}
+	echo -e "csa.conf file, using (0017) as the value." >> ${ACTIVE}
+fi
+
+#
+#	Check the command line parameters
+#
+while getopts rs:e: OPTION
+do
+	case ${OPTION} in
+	r)
+		RFLAG=0
+		;;
+	s)
+		START_P=${OPTARG}
+		;;
+	e)
+		END_P=${OPTARG}
+		;;
+	?)
+		ERRFLAG=1
+		;;
+	esac
+done
+
+shift `expr ${OPTIND} - 1`		# Get rid of "--"
+
+if [ ${ERRFLAG} -ne 0 -o ${#} -ne 0 ]
+then
+	echo -e "`date` - ${USAGE}" >> ${ACTIVE}
+	CSAERRMSG="${USAGE}"
+	ERROR_EXIT
+fi
+
+if [ "${CHMOD}" != "" ]
+then
+        CHMOD=770
+fi
+
+if [ "${CHGRP}" != "" ]
+then
+        CHGRP=csaacct
+fi
+
+#
+#	Extract and verify the START date and time from the input parameters
+#
+START_DATE="`echo ${START_P} | cut -c1-4`"
+START_TIME="`echo ${START_P} | cut -c5-`"
+
+if [ "$START_DATE" -lt "0101" ]
+then
+	CSAERRMSG="The START date '$START_DATE' is less than the minimum \
+date '0101'."
+	ERROR_EXIT
+fi
+
+if [ "$START_DATE" -gt "1231" ]
+then
+	CSAERRMSG="The START date '$START_DATE' is greater than the maximum \
+date '1231'."
+	ERROR_EXIT
+fi
+
+if [ "$START_TIME" = "" ]
+then
+	START_TIME="0000"
+	echo -e "WARNING: The START time string is null, using '$START_TIME'." \
+		>> ${ACTIVE}
+#	CSAERRMSG="The START time string is null, using '$START_TIME'."
+#	ERROR_WARN
+fi
+
+if [ "$START_TIME" -gt "2359" ]
+then
+	CSAERRMSG="The START time '$START_TIME' is greater than the maximum \
+time '2359'."
+	ERROR_EXIT
+fi
+
+#
+#	Extract and verify the END date and time from the input parameters
+#
+END_DATE="`echo ${END_P} | cut -c1-4`"
+END_TIME="`echo ${END_P} | cut -c5-`"
+
+if [ "$END_DATE" -lt "0101" ]
+then
+	CSAERRMSG="The END date '$END_DATE' is less than the minimum \
+date '0101'."
+	ERROR_EXIT
+fi
+
+if [ "$END_DATE" -gt "1231" ]
+then
+	CSAERRMSG="The END date '$END_DATE' is greater than the maximum \
+date '1231'."
+	ERROR_EXIT
+fi
+
+if [ "$END_TIME" = "" ]
+then
+	END_TIME="2359"
+	echo -e "WARNING: The END time string is null, using '$END_TIME'." \
+		>> ${ACTIVE}
+#	CSAERRMSG="The END time string is null, using '$END_TIME'."
+#	ERROR_WARN
+fi
+
+if [ "$END_TIME" -gt "2359" ]
+then
+	CSAERRMSG="The END time '$END_TIME' is greater than the maximum \
+time '2359'."
+	ERROR_EXIT
+fi
+
+#
+#	If we're suppose to include data from the last csarun invocation,
+#	make sure that csarun completed successfully.  If not, exit.
+#
+if [ -r ${LASTDATE} ]
+then
+	read ODATE OTIME < ${LASTDATE}
+
+	#
+	#	Make sure that ODATE and OTIME are within the time span
+	#	we're interested in.
+	#
+	#	First check the usual case where START_DATE <= END_DATE.
+	#
+	if [ ${START_DATE} -le ${END_DATE} ]
+	then
+		if [ ${ODATE} -ge ${START_DATE} -a ${ODATE} -lt ${END_DATE} ]
+		then
+			CHECK_STATE=1
+		else
+			if [ ${ODATE} -eq ${END_DATE} ]
+			then
+				if [ ${OTIME} -le ${END_TIME} ]
+				then
+					CHECK_STATE=1
+				fi
+			fi
+		fi
+	#
+	#	Now check the case where START_DATE > END_DATE
+	#	(ie. December to January).
+	#
+	else
+		if [ ${ODATE} -ge ${START_DATE} -o ${ODATE} -lt ${END_DATE} ]
+		then
+			CHECK_STATE=1
+		else
+			if [ ${ODATE} -eq ${END_DATE} ]
+			then
+				if [ ${OTIME} -le ${END_TIME} ]
+				then
+					CHECK_STATE=1
+				fi
+			fi
+		fi
+	fi
+
+	if [ ${CHECK_STATE} -eq 1 ]
+	then
+		if [ "`cat ${STATEFILE}`" != "COMPLETE" ]
+		then
+			MSG1="Data from the csarun invocation "
+			MSG2="on `echo ${ODATE} | cut -c1-2`/"
+			MSG3="`echo ${ODATE} | cut -c3-4` at "
+			MSG4="`echo ${OTIME} | cut -c1-2`:"
+			MSG5="`echo ${OTIME} | cut -c3-4`\n"
+			MSG6="\tcan't be used until csarun errors are fixed."
+			CSAERRMSG="${MSG1}${MSG2}${MSG3}${MSG4}${MSG5}${MSG6}"
+			ERROR_EXIT
+		fi
+	fi
+fi
+
+#
+#	Make sure there is enough space in ${ACCT_FS} to do periodic accounting
+#
+BLOCKS=`df -kP ${ACCT_FS} | sed -n 2p | awk '{print $4}'`
+if [ ${BLOCKS} -le ${MIN_BLKS} ]
+then
+	CSAERRMSG="Insufficient space in ${ACCT_FS} \
+		\n\t${MIN_BLKS} blocks needed, ${BLOCKS} blocks available"
+	ERROR_EXIT
+fi
+
+#
+#	Get a list of the daily data files we want to process.  Handle
+#	the case where START_DATE < END_DATE and also START_DATE > END_DATE,
+#	for example December thru January (12010000 - 01312359).
+#	Only interested in the data files (cacct, cms, dacct); ignore others.
+#	Data filename format is data-type.MMDDhhmm (i.e. cacct.12221000)
+#
+
+cd ${SUM_DIR}
+for I in *
+do
+	FILE_NAME="`echo ${I} | cut -d. -f1`"
+	case $FILE_NAME in
+	'cacct')
+		;;
+	'cms')
+		;;
+	'dacct')
+		;;
+	*)
+		continue
+		;;
+	esac
+
+	DATE_TIME="`echo ${I} | cut -d. -f2`"
+	FILE_DATE="`echo ${DATE_TIME} | cut -c1-4`"
+	FILE_TIME="`echo ${DATE_TIME} | cut -c5-`"
+
+	
+	if [ ${START_DATE} -gt ${END_DATE} ]
+	then
+	   if [ ${FILE_DATE} -lt ${START_DATE} -a ${FILE_DATE} -gt ${END_DATE} ]
+	   then
+		continue
+	   fi
+	else
+	   if [ ${FILE_DATE} -lt ${START_DATE} -o ${FILE_DATE} -gt ${END_DATE} ]
+	   then
+		continue
+	   fi
+	fi
+#
+#	We need to check files on the START_DATE to make sure
+#	they're after the START_TIME.  A simple comparison for
+#	both START and END times doesn't work.
+#
+	if [ ${FILE_DATE} -eq ${START_DATE} ]
+	then
+	   if [ ${FILE_TIME} -lt ${START_TIME} ]
+	   then
+		continue 
+	   fi
+	fi
+#
+#	We need to check files on the END_DATE to make sure
+#	they're after the END_TIME.  A simple comparision for
+#	both START and END doesn't work.
+#
+	if [ ${FILE_DATE} -eq ${END_DATE} ]
+	then
+		if [ ${FILE_TIME} -gt ${END_TIME} ]
+		then
+		   continue
+		fi
+	fi
+#
+#	If we made it this far, the data must be within the
+#	period we're looking for.
+#
+	if [ -s ${I} ]
+	then
+	   case $FILE_NAME in
+	   'cacct')
+		   DAILYFILES="${DAILYFILES} ${I}"
+		   ;;
+	   'cms')
+		   CMSFILES="${CMSFILES} ${I}"
+		   ;;
+	   'dacct')
+		   DAILYFILES="${DAILYFILES} ${I}"
+		   ;;
+	   *)
+#		   this shouldn't happen; note it and continue on
+		   echo -e "WARNING:  Encountered non-data file ${I}." \
+			>> ${ACTIVE}
+		   ;;
+	   esac
+	fi
+done
+
+if [ "${DAILYFILES}" = "" ]
+then
+      echo -e "`date` - No data for period ${START_P} to ${END_P}" >> ${ACTIVE}
+      exit 0
+else
+      echo -e "`date` - start periodic data reporting for ${START_P} to ${END_P}" \
+		>> ${ACTIVE}
+fi
+
+if [ -s ${FEE} ]
+then
+	FEEFILE=${FEE}
+fi
+
+#
+#	Generate the condensed data file for this period
+#
+cd ${SUM_DIR}
+
+csaaddc -o ${FISCAL_DIR}/${PDDATA}.${DTIME} ${DAILYFILES} ${FEEFILE} \
+	2> ${NITE_DIR}/Eaddc.${DTIME}
+if [ ${?} -ne 0 ]
+then
+	CSAERRMSG="csaaddc errors. See ${NITE_DIR}/Eaddc.${DTIME}"
+	ERROR_EXIT
+fi
+chgrp ${CHGRP} ${FISCAL_DIR}/${PDDATA}.${DTIME}
+echo -e "`date` - periodic condensed data file complete" >> ${ACTIVE}
+
+#
+#	Generate the command summary data file for this period
+#
+csacms -s ${CMSFILES} > ${FISCAL_DIR}/${CMS}.${DTIME} \
+	2> ${NITE_DIR}/Ecms.${DTIME}
+if [ ${?} -ne 0 ]
+then
+	CSAERRMSG="csacms errors. See ${NITE_DIR}/Ecms.${DTIME}"
+	ERROR_EXIT
+fi
+chgrp ${CHGRP} ${FISCAL_DIR}/${CMS}.${DTIME}
+echo -e "`date` - command summary data file complete" >> ${ACTIVE}
+
+#
+#	Generate the ascii command summary report
+#
+csacms -a -s ${FISCAL_DIR}/${CMS}.${DTIME} > ${FISCAL_DIR}/cmsrpt.${DTIME} \
+	2> ${NITE_DIR}/Ecms.${DTIME}
+if [ ${?} -ne 0 ]
+then
+	CSAERRMSG="csacms errors. See ${NITE_DIR}/Ecms.${DTIME}"
+	ERROR_EXIT
+fi
+echo -e "`date` - command summary report complete" >> ${ACTIVE}
+
+#
+#	Generate the report for this period
+#
+if [ "${CSACREP}" ]
+then
+	csacrep ${CSACREP} -db < ${FISCAL_DIR}/${PDDATA}.${DTIME} \
+		> ${FISCAL_DIR}/T${PDRPT}.${DTIME} \
+		2> ${NITE_DIR}/Ecrep.${DTIME}
+else
+	csacrep -hucw -db < ${FISCAL_DIR}/${PDDATA}.${DTIME} \
+		> ${FISCAL_DIR}/T${PDRPT}.${DTIME} \
+		2> ${NITE_DIR}/Ecrep.${DTIME}
+fi
+
+if [ ${?} -ne 0 ]
+then
+	CSAERRMSG="csacrep errors. See ${NITE_DIR}/Ecrep.${DTIME}"
+	ERROR_EXIT
+fi
+echo -e "`date` - periodic report complete" >> ${ACTIVE}
+
+#
+#	Combine all of the reports into the real periodic report
+#
+FSDATE=`echo ${START_DATE} | sed -e 's/^\(..\)/\1\//'`
+FEDATE=`echo ${END_DATE} | sed -e 's/^\(..\)/\1\//'`
+FSTIME=`echo ${START_TIME} | sed -e 's/^\(..\)/\1:/'`
+FETIME=`echo ${END_TIME} | sed -e 's/^\(..\)/\1:/'`
+BTWMSG="FROM ${FSDATE} at ${FSTIME} TO ${FEDATE} at ${FETIME}"
+
+cd ${FISCAL_DIR}
+
+echo -e "${SYSNAME} ${BTWMSG}\n" > tmprprt
+cat T${PDRPT}.${DTIME} >> tmprprt
+pr -h "${PURHDR}" tmprprt >> ${PDRPT}.${DTIME}
+echo -e "${SYSNAME} ${BTWMSG}\n" > tmprprt
+cat cmsrpt.${DTIME} >> tmprprt
+pr -h "${CSRHDR}" tmprprt >> ${PDRPT}.${DTIME}
+#pr -h "${LLRHDR} ${SYSNAME} ${BTWMSG}" >> ${PDRPT}.${DTIME}
+rm T${PDRPT}.${DTIME} cmsrpt.${DTIME} tmprprt
+chgrp ${CHGRP} ${PDRPT}.${DTIME}
+
+#	User exit:
+#	If there exists a script named "@sbindir@/csa.puser",
+#	it will be executed via the shell "." command.  The "."
+#	command will not execute a compiled program, but the script
+#	file executed can.
+#
+#	A possible use of this exit would be to generate any site report,
+#	that would be appended to the ${PDRPT} file.  For example the
+#	script could contain
+#	    /usr/bin/local/siterpt > siterpt
+#	    pr -h "${SITEHDR} ${SYSNAME} ${BTWMSG}" siterpt >> ${PDRPT}.${DTIME}
+#
+#	csaperiod will check the return status from "csa.puser".  If the
+#	return status is non-zero execution of csaperiod will be aborted.
+#
+if [ -s @sbindir@/csa.puser ]
+then
+	. @sbindir@/csa.puser 2> ${NITE_DIR}/Epuser.${DTIME}
+	if [ ${?} -ne 0 ]
+	then
+		CSAERRMSG=
+"USEREXIT - csa.puser errors\n\tSee ${NITE_DIR}/Epuser.${DTIME}"
+		ERROR_EXIT
+	fi
+fi
+
+#
+#	Remove the daily data files, if specified
+#
+if [ ${RFLAG} ]
+then
+	cd ${SUM_DIR}
+	rm -f ${DAILYFILES}
+	rm -f ${CMSFILES}
+	echo -e "`date` - daily condensed data files removed" >> ${ACTIVE}
+fi
+
+#
+#	Remove empty error files
+#
+cd ${NITE_DIR}
+for I in `ls E*${DTIME}`
+do
+	if [ ! -s ${I} ]
+	then
+		rm ${I}
+	else
+		EFILE="${EFILE} ${I}"
+	fi
+done
+
+if [ "${EFILE}" != "" ]
+then
+	chgrp ${CHGRP} ${EFILE}
+	echo -e "\nThere are non-fatal errors in file(s)\n '${EFILE}'." \
+		| Mail -s "CSA ERRORS" ${WMAILLIST}
+	echo -e "`date` - *** Non-fatal error messages in" >> ${ACTIVE}
+	echo -e "   ${EFILE}" >> ${ACTIVE}
+fi
+echo -e "`date` - periodic accounting done" >> ${ACTIVE}
+
+exit 0

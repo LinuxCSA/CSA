@@ -1,0 +1,28 @@
+.\"
+.\" Copyright (c) 2000-2007 Silicon Graphics, Inc.
+.\" All rights reserved.
+.\"
+.TH JWAIT 1 "4 October 2005" "Linux Utilities" "Linux User's Manual"
+.SH NAME
+jwait \- await completion of a job
+.SH SYNOPSIS
+.BR "jwait" " jid"
+.SH DESCRIPTION
+.B jwait
+waits for the job whose job ID is jid and reports its termination status.
+The termination status is determined based upon the last process to exit 
+the job.
+
+The root user can wait on any process on the system.  All other users can only
+wait on jobs that they own.
+
+.SH OPTIONS
+.TP
+.BR "jid"
+The identifier for the job that
+.B jwait
+should await until completion.
+.SH "SEE ALSO"
+.BR job (7),
+.BR jkill (1),
+.BR jstat (1)

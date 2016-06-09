@@ -1,0 +1,112 @@
+#! /bin/sh
+#
+# Copyright (c) 2000-2002 Silicon Graphics, Inc and LANL  All Rights Reserved.
+# Copyright (c) 2004-2007 Silicon Graphics, Inc All Rights Reserved.
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as 
+# published by the Free Software Foundation; either version 2 of
+# the License, or (at your option) any later version.
+# 
+# This program is distributed in the hope that it would be useful, but 
+# WITHOUT ANY WARRANTY; without even the implied warranty of 
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details. 
+#
+# You should have received a copy of the GNU General Public License along 
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 59 Temple Place - Suite 330, Boston MA 02111-1307, USA.
+#
+# Contact information:  Silicon Graphics, Inc., 1140 East Arques Avenue,
+# Sunnyvale, CA  94085, or:
+# 
+# http://www.sgi.com 
+#
+# csa:		Start CSA job accounting
+#
+# /etc/init.d/csa
+#
+# description:	CSA provides job and per-process accounting.  CSA \
+#		collects per-process resource usage data, monitors \
+#		disk usage and charges fees to specific login \
+#		accounts.  This accounting information is combined \
+#		by job identifier within system uptime periods for \
+#		daily and periodic reports.
+# config: /etc/csa.conf
+#
+### BEGIN INIT INFO
+# Provides: csa
+# Required-Start: $local_fs job
+# Required-Stop: $local_fs job
+# Default-Start: 2 3 5
+# Default-Stop: 0 1 6
+# Description: Starts CSA job accounting
+### END INIT INFO
+
+. /etc/rc.d/init.d/functions
+
+CSAD_DIR=/var/run/csad
+if [ ! -d $CSAD_DIR ]; then
+	mkdir -p $CSAD_DIR;
+	chmod 0755 $CSAD_DIR;
+fi
+
+pgrep -fx @sbindir@/jobd 1> /dev/null
+if [ $? -ne 0 ]; then
+	echo -n "CSA requires job daemon to be run first "
+	failure
+	echo
+	exit 0
+fi
+
+case $1 in
+
+'start')
+	echo -n "Starting CSA job accounting "
+	@bindir@/jxcsa start 2> /dev/null
+	RETVAL=$?
+	[ $RETVAL -eq 0 ] && retry=3 || retry=0
+	while [ $retry -gt 0 ]; do
+		@sbindir@/csaswitch -c on 2> /dev/null
+		RETVAL=$?
+		if [ $RETVAL -eq 0 ]; then
+			break
+		else
+			sleep 1
+			retry=$(expr $retry - 1)
+		fi
+	done
+	[ $RETVAL -eq 0 ] && touch /var/lock/subsys/csa
+	# clean up old accounting files
+	rm -f @csalocalstatedir@/nite/lock* 2> /dev/null
+	[ $RETVAL -eq 0 ] && success || failure
+	echo
+	;;
+
+'stop')
+	echo -n "Stopping CSA job accounting "
+	@sbindir@/csaswitch -c halt 2> /dev/null
+	RETVAL=$?
+	if [ $RETVAL -eq 0 ]; then
+		@bindir@/jxcsa stop 2> /dev/null
+		RETVAL=$?
+		rm -f /var/lock/subsys/csa
+		sleep 3
+	fi
+	[ $RETVAL -eq 0 ] && success || failure
+	echo
+	;;
+
+'restart')
+	$0 stop
+	$0 start
+	;;
+
+*)
+	echo "usage: $0 {start|stop|restart}"
+	exit 1
+	;;
+
+esac
+
+exit $RETVAL

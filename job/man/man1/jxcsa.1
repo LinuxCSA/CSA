@@ -1,0 +1,20 @@
+.\"
+.\" Copyright (c) 2000-2007 Silicon Graphics, Inc.
+.\" All rights reserved.
+.\"
+.TH JXCSA 1 "31 October 2007" "Linux Utilities" "Linux User's Manual"
+.SH NAME
+jxcsa \- start or stop CSA daemon
+.SH SYNOPSIS
+.BR "jxcsa" " {start|stop}"
+.SH DESCRIPTION
+.B jxcsa
+starts or stops the CSA daemon (Comprehensive System Accounting),
+which runs as a thread in the job daemon (jobd) process.
+
+This command should only be run from the \f4/etc/init.d/csa\f1 script;
+see the \f4csa\f1(8) man page for more information.
+
+.SH "SEE ALSO"
+.BR job (7),
+.BR csa (8)

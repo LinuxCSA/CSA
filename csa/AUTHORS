@@ -1,0 +1,17 @@
+December 15, 2000
+
+The original port of SGI IRIX job accounting (CSA) to Linux
+came from a joint collaborative project between SGI and Los Alamos
+National Laboratory (LANL).
+
+The authors of this port to Linux are Daryl Grunau (dwg@acl.lanl.gov)
+and Marlys Kohnke (kohnke@sgi.com).
+
+
+
+This program has been approved for release from Los Alamos National
+Laboratory by LA-CC Number 00-59, and authored in part by an employee of
+the University of California, operator of the Los Alamos National
+Laboratory under Contract No. W-7405-ENG-36 with the U.S. Department of
+Energy.
+

@@ -1,0 +1,38 @@
+.\"
+.\" Copyright (c) 2003-2008 Silicon Graphics, Inc.
+.\" All Rights Reserved.
+.\"
+.TH job_getjid 3
+.SH NAME
+job_getjid \- return the job ID for the given process
+.SH SYNOPSIS
+.nf
+\f3#include <job.h>\f1
+.sp .8v
+\f3jid_t job_getjid( pid_t pid );\f1
+.fi
+.SH DESCRIPTION
+The \f4job_getjid\f1 library call is part of the job library that allows
+processes to manipulate and obtain status about linux jobs.
+When the job library is to be used, the
+\f3job.h\f1 header file should be included to obtain the proper definitions.
+.PP
+\f4job_getjid\f1 
+will return the job ID for the given process if it is part of a job.
+.SH DIAGNOSTICS
+Upon successful completion, \f4job_getjid\f1 returns the job ID for the
+specified process.  Otherwise, a value of (jid_t)-1 is returned for the
+following conditions:
+.RS .5i
+.PP
+Communication with the job daemon fails; \f3errno\f1 is unchanged.
+.PP
+The given PID is invalid; \f3errno\f1 is set to \f3ESRCH\f1.
+.PP
+The process is not part of a job; \f3errno\f1 is set to \f3ENODATA\f1.
+.RE
+.PP
+Note that you need to test for -1 using a cast.
+See the job_create(3) man page for an example.
+.SH SEE ALSO
+job_create(3), job_detachjid(3), job_detachpid(3), job_attachpid(3), job_getjidcnt(3), job_getjidlist(3), job_getpidcnt(3), job_getpidlist(3), job_getprimepid(3), job_getuid(3), job_killjid(3), job_sethid(3), job_waitjid(3),  job(7).

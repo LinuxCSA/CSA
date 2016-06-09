@@ -1,0 +1,55 @@
+/*
+ * Copyright (c) 2000-2002 Silicon Graphics, Inc and LANL  All Rights Reserved.
+ * Copyright (c) 2007 Silicon Graphics, Inc  All Rights Reserved.
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as 
+ * published by the Free Software Foundation; either version 2 of
+ * the License, or (at your option) any later version.
+ * 
+ * This program is distributed in the hope that it would be useful, but 
+ * WITHOUT ANY WARRANTY; without even the implied warranty of 
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details. 
+ *
+ * You should have received a copy of the GNU General Public License along 
+ * with this program; if not, write to the Free Software Foundation, Inc.,
+ * 59 Temple Place - Suite 330, Boston MA 02111-1307, USA.
+ *
+ * Contact information:  Silicon Graphics, Inc., 1140 East Arques Avenue, 
+ * Sunnyvale, CA  94085, or:
+ * 
+ * http://www.sgi.com 
+ */
+/*
+ *	csa_conf.h:	This include file includes symbols used by library
+ *			routines which do file parsing (config).
+ */
+
+#ifndef	_CSA_CONF_H
+#define	_CSA_CONF_H
+
+/*
+ *	Configuration file name.  This must be an absolute path.  The
+ *		file must be owned by root or "csaacct" and the file's
+ *		mode must not have world or group write/execute
+ *		permissions.
+ */
+#define __CONFIG__FILE__	"@sysconfdir@/csa.conf"
+
+#define	NULLCHARPTR		(char *)0
+
+/*
+ *	Define special characters and maximum line length.
+ */
+#define __COMMENT_CHAR__	'#'
+#define __NULL_CHAR__		'\0'
+#define __WHITE_CHARS__		" \t\n"
+#define	__DELIMITER__		'"'		/* delimits string values */
+#define	__SEPARATORS__		":,; \t"	/* separates label from value */
+#define __SPECIALS__		"./ \t"		/* valid within the value */
+#define __STR_SPECIALS__	"/ \t"		/* valid in a string value */
+#define __LAB_SPECIAL__		'_'		/* valid within label name */
+#define __PARAMSIZ__		4096
+
+#endif	/* _CSA_CONF_H */

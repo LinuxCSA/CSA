@@ -1,0 +1,106 @@
+#! /bin/bash
+#       
+# Copyright (c) 2004-2007 Silicon Graphics, Inc All Rights Reserved.
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as
+# published by the Free Software Foundation; either version 2 of
+# the License, or (at your option) any later version.
+#
+# This program is distributed in the hope that it would be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 59 Temple Place - Suite 330, Boston MA 02111-1307, USA.
+#
+# Contact information:  Silicon Graphics, Inc., 1140 East Arques Avenue,
+# Sunnyvale, CA  94085, or:
+#
+# http://www.sgi.com 
+#
+# dodisk uses 'acctdusg' to account for disk usage by username in all
+# filesystems.  The accounting information generated in
+# @csalocalstatedir@/day/dtmp is then converted into cacct format
+# and then stored in @csalocalstatedir@/nite/diskcacct.
+
+#   By default, the dodisk command uses acctdusg to do disk accounting by
+#   login directory for all filesystems. It is typically run by using the
+#   cron(8) command.
+                                                                                
+#   By default, dodisk reports accounting information in 
+#   @csalocalstatedir@/day/dtmp, converts the records to cacct format and
+#   stores them in @csalocalstatedir@/nite/diskcacct.
+                                                                                
+#   The dodisk command accepts the following operand:
+#     mount_points   Specifies one or more mount points of mounted
+#                    filesystem names where disk accounting is performed.
+#                    If mount_points are not specified, "/" is the default
+#                    filesystem.
+
+DtmpOutput=@csalocalstatedir@/day/dtmp
+Diskcacct=@csalocalstatedir@/nite/diskcacct
+ErrorFile=/tmp/dodiskerror$$
+
+PATH=@sbindir@:/bin:/usr/bin:/etc
+cd @csalocalstatedir@/day
+
+
+# If no mount points supplied, we only care about /
+if [ -z "$1" ]
+then
+	MountList="/"
+else
+	# one or more mount points supplied, sent MountList to $*
+	MountList=$*
+fi
+
+# Check to be sure all the mount points exist and are directories.
+# If they don't exist - state they are being ignored and don't put them
+# on the list of things to process.
+for f in $MountList
+do
+	if ! [ -d $f ]
+	then
+		echo "$0: $f is not a directory -- ignored"
+	else
+		if [ -z "$CheckedMountList" ]
+		then
+			CheckedMountList=$f
+		else
+			CheckedMountList="$CheckedMountList $f"
+		fi
+	fi
+done
+
+#echo "$0 debug - CheckedMountList is: $CheckedMountList"
+
+# If all the supplied mount points were bad, we put 'no data' in the 
+# temp output file.  Otherwise, we process each directory with 
+# acctusg.
+
+if [ -z "$CheckedMountList" ]
+then
+	echo "$0: No data" > $DtmpOutput
+else
+	find $CheckedMountList -xdev -print | acctdusg > $DtmpOutput
+fi
+
+# Now we sort the tmp output file and pipe the result to acctdisk
+sort $DtmpOutput -n -k"+1,+2" | acctdisk > $Diskcacct 2> $ErrorFile
+
+# If there is output in the error file...
+if [ `wc -l $ErrorFile | sed -e 's/^ *//g' | sed -e 's/ .*//g'` -gt 0 ]
+then
+	# we have an error
+	echo "$0 acctdisk hit an error:" > /dev/console
+	cat $ErrorFile > /dev/console
+	Mail -s "CSA disk accounting error (dodisk)" root < $ErrorFile
+fi
+
+rm -f $ErrorFile
+
+chmod 640 $Diskcacct $DtmpOutput
+chown csaacct:csaacct $Diskcacct $DtmpOutput

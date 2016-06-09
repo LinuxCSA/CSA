@@ -1,0 +1,39 @@
+.\"
+.\" Copyright (c) 2000-2007 Silicon Graphics, Inc.
+.\" All rights reserved.
+.\"
+.TH JKILL 1 "4 October 2005" "Linux Utilities" "Linux User's Manual"
+.SH NAME
+jkill \- send signal to a job
+.SH SYNOPSIS
+.BR "jkill" " [ \-signal ] " "jid ..."
+.br
+.B "jkill -l"
+.SH DESCRIPTION
+.B jkill
+sends the specified signal to the processes contained in the job(s) identified
+by the jid(s).  If no signal is specified, the TERM signal is sent.
+The TERM signal will kill processes which do not catch this signal.
+For other processes, if may be necessary to use the KILL (9) signal,
+since this signal cannot be caught.
+
+.SH OPTIONS
+.TP
+.BR "jid ..."
+Specify the list of jobs that 
+.B kill
+should signal.  
+.TP
+.BR \-signal
+Specify the signal to send.
+The signal may be given as a signal name or number.
+.TP
+.BR \-l
+Print a list of signal names.  These are found in
+.I /usr/include/linux/signal.h
+.SH "SEE ALSO"
+.BR job (7),
+.BR jwait (1),
+.BR jstat (1),
+.BR kill (1),
+.BR sigvec (2)

@@ -1,0 +1,56 @@
+#####################################################################
+##  Copyright (c) 2006-2007 Silicon Graphics, Inc All Rights Reserved.
+##
+##  This program is free software; you can redistribute it and/or modify
+##  it under the terms of the GNU General Public License as
+##  published by the Free Software Foundation; either version 2 of
+##  the License, or (at your option) any later version.
+##  
+##  This program is distributed in the hope that it would be useful, but
+##  WITHOUT ANY WARRANTY; without even the implied warranty of
+##  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+##  GNU General Public License for more details.
+##  
+##  You should have received a copy of the GNU General Public License along
+##  with this program; if not, write to the Free Software Foundation, Inc.,
+##  59 Temple Place - Suite 330, Boston MA 02111-1307, USA.
+##              
+##  Contact information:  Silicon Graphics, Inc., 1140 East Arques Avenue,
+##  Sunnyvale, CA  94085, or:
+##  
+##  http://www.sgi.com
+
+# ChangeLog
+# * 02/15/2006	Jay Lan <jlan@sgi.com>
+# - initial creation
+
+
+#
+#		CSA Test Suites
+#               ---------------
+# This test suite tests CSA functionalities with some programs and scripts.
+#
+# includes these tests:
+#	csa-test.ks
+#
+
+Requirements:
+    Required RPMS:
+	- ksh rpm
+	- rts-tools-latest.ia64.rpm
+    Required Environment
+	- include these path in $PATH:
+		/var/csa/tests
+		/usr/tests/rts/bin
+		/usr/sbin
+	- Need to do 'su - csatest' to create a Job for testing. So, all
+	  shell scrips should be executed within the created shell.
+	- Need to ensure 'ntp' service has been chkconfig'ed OFF. Some tests
+	  would fail if the clocks of the test machine and the ntp server
+	  do not agree.
+
+Special Notes:
+    - csatest_api needs to be executed with root privilege.
+      The scripts should be executed under 'csatest/wheel' login.
+      login ID of csatest can be set locally.
+

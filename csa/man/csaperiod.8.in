@@ -1,0 +1,135 @@
+.\"
+.\" (C) 2000-2007 Silicon Graphics, Inc.  All Rights Reserved.
+.\"
+.\" This documentation supports a
+.\" program that is free software; you can redistribute it and/or modify it
+.\" under the terms of version 2 of the GNU General Public License as
+.\" published by the Free Software Foundation.
+.\"
+.\" The documentation that supports
+.\" this program is distributed in the hope that it will be useful, but
+.\" WITHOUT ANY WARRANTY; without even the implied warranty of
+.\" MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+.\"
+.\" Further, this documentation and the software it
+.\" supports, are distributed without any warranty that it is
+.\" free of the rightful claim of any third person regarding infringement
+.\" or the like.  Any license provided herein, whether implied or
+.\" otherwise, applies only to this software file.  Patent licenses, if
+.\" any, provided herein do not apply to combinations of this program with
+.\" other software, or any other product whatsoever.
+.\"
+.\" You should have received a copy of the GNU General Public License along
+.\" with this program; if not, write the Free Software Foundation, Inc., 59
+.\" Temple Place - Suite 330, Boston MA 02111-1307, USA.
+.\"
+.\" Contact information:  Silicon Graphics, Inc., 1140 East Arques Avenue,
+.\" Sunnyvale, CA  94085, or:
+.\"
+.\" http://www.sgi.com
+.\"
+.\" For further information regarding this notice, see:
+.\"
+.\" http://oss.sgi.com/projects/GenInfo/NoticeExplan
+.\"
+.TH csaperiod 8
+.SH NAME
+csaperiod \- runs periodic accounting
+.SH SYNOPSIS
+\f4@sbindir@/csaperiod\f1
+[\f4-e\f1\ \f2MMDDhhmm\f1]
+[\f4-r\f1]
+[\f4-s\f1\ \f2MMDDhhmm\f1]
+.SH DESCRIPTION
+The \f4csaperiod\f1 command directs the processing
+of the daily consolidated accounting files,
+which are created by the \f4csarun\f1(8) command.
+The \f4csaaddc\f1(8) command merges the daily files into one file.
+The \f4csacrep\f1(8) command then generates a report
+based on the merged file.
+.PP
+The progress of \f4csaperiod\f1 is recorded in the \f4pdact\f1 file.
+When an error is detected,
+a message is written to the \f4/var/log/messages\f1 file,
+and mail is sent to \f4root\f1.
+Further data processing is halted.
+.PP
+The \f4cron\f1(8) command usually initiates \f4csaperiod\f1.
+.PP
+The \f4csaperiod\f1 command accepts the following options:
+.TP 5
+\f4-e\f1\ \f2MMDDhhmm\f1
+Selects consolidated accounting data generated at or before
+the specified date, \f2MMDDhhmm\f1.
+.TP
+\f4-r\f1
+Removes the daily data files after processing is done.
+The default is to leave the daily data files in
+the \f4@csalocalstatedir@/sum\f1 directory.
+.TP
+\f4-s\f1\ \f2MMDDhhmm\f1
+Selects consolidated accounting data generated at or after
+the specified date, \f2MMDDhhmm\f1.
+.SH NOTES
+By default, \f4csaperiod\f1 processes all
+the \f4@csalocalstatedir@/sum\f1 files.
+The mail recipients (\f4root\f1 by default)
+can be changed by modifying the \f4MAIL_LIST\f1 and \f4WMAIL_LIST\f1 parameters
+in the \f4@sysconfdir@/csa.conf\f1 file.
+.PP
+If the script \f4@sbindir@/csa.puser\f1 exists, \f4csaperiod\f1 will
+execute it via the shell "." command.
+A possible use of this user exit would be to generate any site specific
+report, which would be appended to the periodic report.
+\f4csaperiod\f1 will check the return status from "csa.puser".  If the
+return status is non-zero, execution of csaperiod will be aborted.
+.PP
+For example, the script could contain:
+.PP
+.nf
+.ft 7
+.sp .8v
+/usr/bin/local/siterpt > siterpt
+pr -h "${SITEHDR} ${SYSNAME} ${BTWMSG}" siterpt >> ${PDRPT}.${DTIME}
+.ft 1
+.fi
+.PP
+You need to make sure that the \f4csaperiod\f1 command
+can read the site-generated user exit script.
+If \f4csaperiod\f1 cannot read the script,
+it does not handle the error graciously 
+as it does for other errors.
+This means the error will not be logged in the system messages file and the \f4pdact\f1 file,
+and no notification email will be sent out.
+.SH FILES
+.TP 55
+\f4@sysconfdir@/csa.conf\f1
+CSA configuration file
+.TP
+\f4@csalocalstatedir@/fiscal/cms.MMDDhhmm\f1
+Periodic command usage data in \f4cms\f1 record format
+.TP
+\f4@csalocalstatedir@/fiscal/pdacct.MMDDhhmm\f1
+Periodic condensed data files
+.TP
+\f4@csalocalstatedir@/fiscal/rprt.MMDDhhmm\f1
+Periodic report files
+.TP
+\f4@csalocalstatedir@/nite/pdact\f1
+Log file
+.TP
+\f4@csalocalstatedir@/nite/E*MMDDhhmm\f1
+Error messages files
+.TP
+\f4@csalocalstatedir@/sum/caact.MMDDhhmm\f1
+Daily condensed data files
+.TP
+\f4@sbindir@/csa.puser\f1
+Site-generated user exit script for \f4csaperiod\f1.
+.SH SEE ALSO
+csacms(8),
+cron(8),
+csaaddc(8),
+csacon(8),
+csacrep(8),
+csarun(8).

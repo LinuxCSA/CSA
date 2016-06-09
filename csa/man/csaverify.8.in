@@ -1,0 +1,118 @@
+.\"
+.\" (C) 2000-2007 Silicon Graphics, Inc.  All Rights Reserved.
+.\"
+.\" This documentation supports a
+.\" program that is free software; you can redistribute it and/or modify it
+.\" under the terms of version 2 of the GNU General Public License as
+.\" published by the Free Software Foundation.
+.\"
+.\" The documentation that supports
+.\" this program is distributed in the hope that it will be useful, but
+.\" WITHOUT ANY WARRANTY; without even the implied warranty of
+.\" MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+.\"
+.\" Further, this documentation and the software it
+.\" supports, are distributed without any warranty that it is
+.\" free of the rightful claim of any third person regarding infringement
+.\" or the like.  Any license provided herein, whether implied or
+.\" otherwise, applies only to this software file.  Patent licenses, if
+.\" any, provided herein do not apply to combinations of this program with
+.\" other software, or any other product whatsoever.
+.\"
+.\" You should have received a copy of the GNU General Public License along
+.\" with this program; if not, write the Free Software Foundation, Inc., 59
+.\" Temple Place - Suite 330, Boston MA 02111-1307, USA.
+.\"
+.\" Contact information:  Silicon Graphics, Inc., 1140 East Arques Avenue,
+.\" Sunnyvale, CA  94085, or:
+.\"
+.\" http://www.sgi.com
+.\"
+.\" For further information regarding this notice, see:
+.\"
+.\" http://oss.sgi.com/projects/GenInfo/NoticeExplan
+.\"
+.TH csaverify 8
+.SH NAME
+\f4csaverify\f1 \- verifies that the  accounting records are valid
+.SH SYNOPSIS
+\f4@sbindir@/csaverify\f1
+[\f4-P\f1\ \f2pacctfile\f1]
+[\f4-o\f1\ \f2offsetfile\f1]
+[\f4-m\f1\ \f2nrec\f1]
+[\f4-v\f1]
+[\f4-D\f1]
+.SH DESCRIPTION
+The \f4csaverify\f1 command verifies that the accounting records are valid.
+The accounting file (\f2pacctfile\f1) can be a \f2pacct\f1 or
+\f2sorted pacct\f1 file.
+.PP
+When \f4csaverify\f1 finds an invalid record,
+it reports the  starting byte offset and length 
+of the record.
+This information can be written to a file
+in addition to standard output.
+A length of -1 indicates the end of file.
+The resulting output file can be used as input to
+\f4csaedit\f1(8) to delete \f2pacct\f1 or \f2sorted pacct\f1 records.
+.PP
+The \f4csaverify\f1 command checks to ensure
+primary records and linked records of a primary
+record (if there are any) are legal. 
+The valid primary records are CSA base,
+start-of-job, end-of-job, configuration,
+workload management, and job header.
+Only CSA base records can have linked records.
+The primary records themselves cannot be linked records. 
+.PP
+The \f4csaverify\f1 command checks to ensure that
+the \f2pacct\f1 or \f2sorted pacct\f1 file only contains
+record types appropriate for that file.
+The following record types are in a \f2sorted pacct\f1
+file and are not allowed in a \f2pacct\f1 file:
+job header record and consolidated workload management records.
+.PP
+Filename options are as follows:
+.TP 12
+\f4-P\f1\ \f2pacctfile\f1
+Specifies the filename of a \f2pacct\f1 or \f2sorted pacct\f1 accounting file.
+The default is \f4@csalocalstatedir@/work/Wpacct\f1.
+.TP
+\f4-o\f1\ \f2offsetfile\f1
+Specifies that information about invalid records,
+formatted for input to the \f4csaedit\f1 command,
+should be written to the file \f2offsetfile\f1.
+This information will still be written to standard output
+in a more user-friendly format.
+.PP
+Output options are as follows:
+.TP 12
+\f4-m\f1\ \f2nrec\f1
+Specifies that no more than \f2nrec\f1 invalid records are reported.
+By default, all invalid records will be reported.
+.TP
+\f4-v\f1
+Sets verbose mode.
+Output is written to standard output.
+.TP
+\f4-D\f1
+Sets debug mode.
+Output is written to standard output.
+.SH EXAMPLES
+The following example verifies the \f2Wpacct1\f1 \f2pacct\f1 file with verbose mode turned on.
+In addition to writing information about invalid records to standard output,
+information formatted for input to \f4csaedit\f1 is written to the file \f2invalid\f1. 
+.RS .5i
+.PP
+\f4 csaverify -P Wpacct1 -o invalid -v\f1
+.RE
+.SH FILES
+.TP 40
+\f4/usr/include/csaacct.h\f1
+Daemon accounting header file
+.TP
+\f4/usr/include/csa.h\f1
+Accounting records header file
+.SH SEE ALSO
+csaedit(8),
+csarun(8).

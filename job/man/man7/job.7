@@ -1,0 +1,53 @@
+.\"
+.\" Copyright (c) 2000-2007 Silicon Graphics, Inc.
+.\" All rights reserved.
+.\"
+.TH JOB 7 "4 October 2005" "Linux Utilities" "Linux User's Manual"
+.SH NAME
+job \- Linux jobs overview
+.SH DESCRIPTION
+A job is a group of related processes all descended from a point of
+entry process and identified by a unique job identifier (\f4jid\f1).  A job
+can contain multiple process groups or sessions, and all processes in
+one of these subgroups can only be contained within a single job.
+.PP
+Not every process on the system is part of a job.  That is, only
+processes which are started by a login initiator like login, rlogin, rsh
+and so on, get assigned a job ID.  In the Linux environment, jobs are created
+via a PAM module.
+.PP
+In addition, it is possible for batch schedulers or similar programs to 
+place certain processes in job containers for tracking or signaling purposes.
+.PP
+Jobs are managed by a userspace daemon process and have the following
+characteristics:
+.IP \(bu 4
+A job is an inescapable container.  A process cannot leave the job
+nor can a new process be created outside the job without explicit
+action, that is, a system call with root privilege.
+.IP \(bu 4
+Each new process inherits the \f4jid\f1 from its parent process.
+.IP \(bu 4
+All point of entry processes (job initiators) create a new job
+as configured.
+.IP \(bu 4
+Job initiation on Linux is performed via a PAM session module.
+.IP \(bu 4
+The job initiator performs authentication and security checks.
+.IP \(bu 4
+Not all processes on a system need be members of a job.
+.IP \(bu 4
+The process control initialization process (init(1M)) and startup
+scripts called by init are not part of a job.
+.PP
+Job initiators can be categorized as either interactive or batch
+processes.
+.PP
+\f4Note:\f1 The existing command jobs(1) applies to shell "jobs" and it is not
+related to the feature described above.  The at(1), atd(8), atq(1), batch(1),
+atrun(8), atrm(1)) man pages refer to shell scripts as a job.
+a shell script.
+.SH "SEE ALSO"
+.BR jwait (1),
+.BR jstat (1),
+.BR jkill (1)

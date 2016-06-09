@@ -1,0 +1,140 @@
+dnl Process this file with autoconf to produce a configure script.
+AC_INIT(csa, 4.1.1)
+AC_CONFIG_SRCDIR(config.h.in)
+
+dnl libtool version info
+csalibversion="4:1:0"
+AC_SUBST(csalibversion)
+
+dnl Automake initialization
+AM_INIT_AUTOMAKE
+
+dnl Set distribution
+distro=`rpm --eval "%_vendor"`
+AC_SUBST(distro)
+
+dnl Set default directory for CSA run script
+csainitdir="/etc/init.d"
+AC_SUBST(csainitdir)
+
+dnl Set default directory for CSA binary/data files
+csalocalstatedir="/var/csa"
+AC_SUBST(csalocalstatedir)
+
+dnl Default user and group make install uses.  Folks just doing a 
+dnl 'make install' will want to leave these as csaacct.  For people building
+dnl RPMs, the csaacct user/group probably doesn't exist on the build machine.
+dnl These variables exists so they can be tweeked when called by rpmbuild in a 
+dnl RPM spec file.  In theory, the spec file would then fix permissions up and 
+dnl perhaps create the csaacct user/group in %pre and %post...
+AC_MSG_CHECKING(for --with-csainstalluser)
+AC_ARG_WITH(csainstalluser, dnl
+[  --with-csainstalluser   User to install files as])
+case "$with_csainstalluser" in
+    "") csainstalluser="csaacct";;
+    *)  csainstalluser="$with_csainstalluser" ;;
+esac
+AC_MSG_RESULT($csainstalluser)
+AC_SUBST(csainstalluser)
+
+dnl now for group ...
+
+AC_MSG_CHECKING(for --with-csainstallgroup)
+AC_ARG_WITH(csainstallgroup, dnl
+[  --with-csainstallgroup  Group to install files as])
+case "$with_csainstallgroup" in
+    "") csainstallgroup="csaacct";;
+    *)  csainstallgroup="$with_csainstallgroup" ;;
+esac
+AC_SUBST(csainstallgroup)
+AC_MSG_RESULT($csainstallgroup)
+
+dnl Generate a configuration header
+AM_CONFIG_HEADER(config.h)
+
+dnl Checks for programs.
+AC_PROG_AWK
+AC_PROG_CC
+AC_ISC_POSIX
+AC_PROG_INSTALL
+AC_PROG_LN_S
+AC_PROG_LIBTOOL
+AC_PATH_PROG(PERL, perl, /usr/bin/perl, \
+	/usr/bin:/sbin:/bin:/usr/sbin:$PATH:/usr/local/bin:/usr/local/gnu/bin)
+
+dnl Checks for libraries.
+AC_CHECK_LIB(nl, nl_handle_alloc, [], [
+	echo "configure: libnl required"
+	exit -1
+])
+AC_CHECK_LIB(cap, cap_get_flag, [], [
+	echo "configure: libcap required"
+	exit -1
+])
+AC_CHECK_LIB(job, jobctl, [], [
+	echo "configure: job required"
+	exit -1
+])
+
+dnl Checks for header files.
+AC_HEADER_DIRENT
+AC_HEADER_STDC
+AC_CHECK_HEADERS(fcntl.h limits.h malloc.h strings.h sys/time.h unistd.h \
+		 mac.h proj.h)
+AC_CHECK_HEADER(netlink/netlink.h, [], [
+	echo "configure: libnl-devel required"
+	exit -1
+])
+AC_CHECK_HEADER(sys/capability.h, [], [
+	echo "configure: libcap-devel required"
+	exit -1
+])
+AC_CHECK_HEADERS(job.h job_csa.h, [], [
+	echo "configure: job required"
+	exit -1
+])
+
+dnl Check for new libnl API.
+AH_TEMPLATE([LIBNL_NEW_API], [new libnl API])
+AC_MSG_CHECKING([for new libnl API])
+AC_COMPILE_IFELSE(
+	[AC_LANG_PROGRAM([[#include <netlink/netlink.h>]],
+			 [[int main(void) { nl_recv(0, 0, 0, 0); }]])],
+	[AC_DEFINE(LIBNL_NEW_API)
+	 AC_MSG_RESULT([yes])],
+	[AC_MSG_RESULT([no])]
+)
+
+dnl Checks for typedefs, structures, and compiler characteristics.
+AC_C_CONST
+AC_TYPE_UID_T
+AC_C_INLINE
+AC_TYPE_MODE_T
+AC_TYPE_OFF_T
+AC_TYPE_PID_T
+AC_TYPE_SIZE_T
+AC_STRUCT_ST_BLOCKS
+AC_STRUCT_ST_RDEV
+AC_STRUCT_TM
+AC_CHECK_SIZEOF(long)
+AC_C_BIGENDIAN
+
+dnl Checks for library functions.
+AC_FUNC_ALLOCA
+AC_FUNC_MMAP
+AC_FUNC_SETVBUF_REVERSED
+AC_TYPE_SIGNAL
+AC_FUNC_STRFTIME
+AC_FUNC_VPRINTF
+AC_CHECK_FUNCS(getcwd getwd putenv regcomp strdup strtol uname \
+	       projid projname getdfltprojuser)
+dnl Die if neither regcomp or regcmp is found
+if test "$ac_cv_func_regcomp" != yes; then
+   AC_CHECK_FUNCS(regcmp,,exit -1)
+fi
+
+dnl Checks for internationalization support
+ALL_LINGUAS=""
+AM_GNU_GETTEXT
+
+AC_OUTPUT(include/Makefile lib/Makefile cmd/csabuild/Makefile cmd/ja/Makefile cmd/Makefile tests/Makefile man/Makefile man/man3/Makefile Makefile intl/Makefile intl/po2tbl.sed po/Makefile.in csad/Makefile)

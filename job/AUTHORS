@@ -1,0 +1,10 @@
+December 15, 2000
+
+The initial implementation the SGI Linux Job Container (Job) and the
+Process Aggregation interface for Linux (PAGG)  was developed to support
+the CSA job accounting project.  The CSA project was a joint collaborative
+effort between SGI and Los Alamos National Laboratory (LANL).  The Linux
+Job Container was done wholly by SGI.
+
+The initial author for the Linux Job Container was Sam Watters
+<watters@sgi.com>

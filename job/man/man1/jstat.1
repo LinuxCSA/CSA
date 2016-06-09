@@ -1,0 +1,106 @@
+.\"
+.\" Copyright (c) 2000-2007 Silicon Graphics, Inc.
+.\" All rights reserved.
+.\"
+.TH JSTAT 1 "4 October 2005" "Linux Utilities" "Linux User's Manual"
+.SH NAME
+jstat \- displays job status information
+.SH SYNOPSIS
+.BR "jstat" " [-a | -j jid]" " -l" " -p" 
+.SH DESCRIPTION
+The \f4jstat\f1 command displays information for
+active jobs.
+.PP
+The \f4jstat\f1 command accepts the following options:
+.TP 20
+\f4-a\f1
+Displays information about all jobs.
+.TP
+\f4-j\f1 \f2job_id\f1
+Displays information only for the specified job ID (\f2jid\f1).
+.TP
+\f4-l\f1
+This option is not yet implemented.
+.TP
+\f4-p\f1
+Print process information about the job or jobs including JID, Owner, 
+PID, PPID, and command.
+.PP
+If neither the \f4-a\f1 or \f4-j\f1 option are specified it is assumed that the
+job in question is for the current process.
+.PP 
+If no options are specified, the \f4jstat\f1 command will return the
+current jid, user name of the job owner, and primary (oldest) command
+for that job.  The job ID is printed out in hexadecimal.
+.RS .5i
+.sp .8v
+\f4% jstat\f1
+.sp .8v
+JID             OWNER          COMMAND
+.sp 0v
+--------------- -------------- --------------
+.sp 0v
+0x17            dan            -ksh
+.RE
+.PP
+If the \f4-j\f1 option with a \f2jid\f1 argument is specified, the \f4jstat\f1 command will return summary information
+for the entered job: jid, owner, and command.
+The \f2jid\f1 argument is expected in hexadecimal.
+The "0x" prefix is optional.
+.RS .5i
+.sp .8v
+\f4% jstat -j 0xab001f00000000ba14\f1
+.sp .8v
+.Ex
+JID                OWNER          COMMAND
+.sp 0v
+------------------ -------------- --------------
+.sp 0v
+0xab001f000000ba14 janet          -csh
+.Ee
+.RE
+.PP
+If the  \f4-p\f1 option is specified, the \f4jstat\f1 command will print out
+information for each process that belongs to that job.
+Process information includes the job JIDs, PIDs, PPIDs, and COMMAND information for the job.
+Summary information is always printed.
+.PP
+.RS .5i
+.sp .8v
+\f4% jstat -p\f1
+.sp .8v
+.Ex
+JID                PID      PPID     COMMAND
+.sp 0v
+------------------ -------- -------- --------------
+.sp 0v
+0xab001f000000ba14 2225     2308     -csh
+.sp 0v
+0xab001f000000ba14 2350     2225     jstat -p
+.Ee
+.RE
+.PP
+If the \f4-a\f1 option is specified,
+the \f4jstat\f1 command  prints out information for all jobs on
+the system.
+.RS .5i
+.sp .8v
+\f4% jstat -a\f1
+.sp .8v
+.Ex
+JID                OWNER          COMMAND
+.sp 0v
+------------------ -------------- --------------
+.sp 0v
+0xab001f0000000e9a root           -ksh
+.sp 0v
+0xab001f000000ba14 janet          -csh
+.sp 0v
+0xab001f000000ba18 dan            -ksh
+.Ee
+.RE
+.PP
+.SH SEE ALSO
+jwait (1),
+jkill (1),
+job (7)

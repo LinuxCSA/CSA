@@ -1,0 +1,43 @@
+.\"
+.\" (C) 2000-2007 Silicon Graphics, Inc.  All rights reserved.
+.\" Unpublished - Rights reserved under the copyright laws of the United
+.\" States.  Use of a copyright notice is precautionary only and does not
+.\" imply publication or disclosure.
+.\"
+.TH dodisk 8
+.SH NAME
+\f4dodisk\f1 \- performs disk accounting
+.SH SYNOPSIS
+.nf
+\f4@sbindir@/dodisk\f1 [\f2mount_points\f1]
+.fi
+.SH DESCRIPTION
+By default, the \f4dodisk\f1 command uses 
+\f4acctdusg\f1 to do disk accounting by login directory for
+all filesystems.
+It is typically run by using the \f4cron\f1(8) command.
+.PP
+By default, \f4dodisk\f1 reports accounting information in \f4@csalocalstatedir@/day/dtmp\f1,
+converts the records to cacct format and stores them in
+\f4@csalocalstatedir@/nite/diskcacct\f1.
+.PP
+The \f4dodisk\f1 command accepts the following operand:
+.TP 15
+\f2mount_points\f1
+Specifies one or more mount points of mounted filesystem names where
+disk accounting is performed.
+If \f2mount_points\f1 are not specified, "/"
+is the default filesystem.
+.SH EXAMPLES
+The following example is a possible entry for the root
+\f4crontab\f1 file so that \f4cron\f1(8) automatically runs \f4dodisk\f1:
+.PP
+.RS .5i
+.PP
+\f430  10  *  *  1-5  @sbindir@/dodisk  2> @csalocalstatedir@/nite/dk2log\f1
+.RE
+.PP
+.SH SEE ALSO
+acctdisk(8),
+cron(8),
+csa(8).

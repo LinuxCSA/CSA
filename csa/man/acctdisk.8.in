@@ -1,0 +1,65 @@
+.\"
+.\" (C) 2004-2007 Silicon Graphics, Inc.  All Rights Reserved.
+.\"
+.\" This documentation supports a
+.\" program that is free software; you can redistribute it and/or modify it
+.\" under the terms of version 2 of the GNU General Public License as
+.\" published by the Free Software Foundation.
+.\"
+.\" The documentation that supports
+.\" this program is distributed in the hope that it will be useful, but
+.\" WITHOUT ANY WARRANTY; without even the implied warranty of
+.\" MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+.\"
+.\" Further, this documentation and the software it
+.\" supports, are distributed without any warranty that it is
+.\" free of the rightful claim of any third person regarding infringement
+.\" or the like.  Any license provided herein, whether implied or
+.\" otherwise, applies only to this software file.  Patent licenses, if
+.\" any, provided herein do not apply to combinations of this program with
+.\" other software, or any other product whatsoever.
+.\"
+.\" You should have received a copy of the GNU General Public License along
+.\" with this program; if not, write the Free Software Foundation, Inc., 59
+.\" Temple Place - Suite 330, Boston MA 02111-1307, USA.
+.\"
+.\" Contact information:  Silicon Graphics, Inc., 1140 East Arques Avenue,
+.\" Sunnyvale, CA  94085, or:
+.\"
+.\" http://www.sgi.com
+.\"
+.\" For further information regarding this notice, see:
+.\"
+.\" http://oss.sgi.com/projects/GenInfo/NoticeExplan
+.\"
+.TH acctdisk 8
+.SH NAME
+\f4acctdisk\f1 \- produces consolidated accounting records
+.SH SYNOPSIS
+.nf
+\f4@sbindir@/acctdisk
+.fi
+.SH DESCRIPTION
+\f4acctdisk\fP reads lines of information from standard input, converts
+them to records in "Consolidated Accounting record" (\f3cacct\f1) format, and
+writes out the records to standard output.
+.PP
+The input lines consist of the login ID and login name of the user and number of disk
+blocks used by the user. These three sets of data are separated by
+white space(s). Note that the login name information is not saved to cacct
+records, but the input lines must contain that data.
+.PP
+The output is not in readable form. It is usually saved as a data
+file for later use. These caact files can also be merged with \f4csaaddc\f1(8)
+command.
+.SH FILES
+.nf
+.ta 19
+\f4/etc/passwd\fP	used for login name to user ID conversions
+\f4@sbindir@/\fP	holds all administration accounting commands
+\f4@csalocalstatedir@/day/pacct\fP	current process accounting file
+.fi
+.SH REFERENCES
+chkconfig(8),
+csaaddc(8),
+dodisk(1M).

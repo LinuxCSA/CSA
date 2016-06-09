@@ -1,0 +1,111 @@
+#! @PERL@
+#
+# Copyright (c) 2000-2002 Silicon Graphics, Inc and LANL  All Rights Reserved.
+# Copyright (c) 2007 Silicon Graphics, Inc  All Rights Reserved.
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as 
+# published by the Free Software Foundation; either version 2 of
+# the License, or (at your option) any later version.
+# 
+# This program is distributed in the hope that it would be useful, but 
+# WITHOUT ANY WARRANTY; without even the implied warranty of 
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details. 
+#
+# You should have received a copy of the GNU General Public License along 
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 59 Temple Place - Suite 330, Boston MA 02111-1307, USA.
+#
+# Contact information:  Silicon Graphics, Inc., 1140 East Arques Avenue, 
+# Sunnyvale, CA  94085, or:
+# 
+# http://www.sgi.com 
+#
+# The lastlogin command records the last date on which each user logged in.
+# It is invoked by the Comprehensive System Accounting (CSA) package as
+# part of the daily accounting run.  The mandatory '-c infile' option
+# specifies that lastlogin should process infile, which is a consolidated
+# accounting file in cacct format.  Lastlogin updates the
+# @csalocalstatedir@/sum/loginlog file.
+
+$| = 1;
+require 'getopts.pl';
+
+# static
+(my $prog = $0) =~ s|.*/||g;
+my $LOGINLOG = 'sum/loginlog';
+my $TMPLOGINLOG = 'sum/tmploginlog';
+$ENV{'PATH'} = '@sbindir@:/bin:/usr/bin:/etc';
+
+# dynamic
+my %USERS = ();
+
+&usage unless &Getopts('c:');
+&usage unless (defined($opt_c));
+
+(undef,undef,$adm_uid,$adm_gid) = getpwnam('csaacct');
+$adm_uid = '3' unless(defined($adm_uid));
+$adm_gid = '4' unless(defined($adm_gid));
+
+# get the current date
+my ($sec,$min,$hour,$mday,$mon,$year) = localtime(time());
+my $date = sprintf("%4d-%02d-%02d",$year+1900,$mon+1,$mday);
+
+chdir '@csalocalstatedir@' || die "$prog: unable to 'cd @csalocalstatedir@': $!\n";
+system ('nulladm', "$LOGINLOG") unless (-r $LOGINLOG);
+
+# initialize everyone currently in the passwd file
+setpwent();
+while (defined(my $pw_name = getpwent())) {
+   $USERS{$pw_name} = '0000-00-00'
+}
+endpwent();
+
+# update with entries found in $LOGINLOG if they have a pw entry
+open(LOG,$LOGINLOG) || die "$prog: unable to open $LOGINLOG: $!\n";
+while (my $line = <LOG>) {
+   next if ($line =~ /^\s*$/);			# skip blanks, if any
+   next if ($line =~ /^#/);			# skip comments, if any
+   my ($d,$u) = split(/\s+/,$line);
+   next unless(defined($d) && defined($u));
+   if ($d =~ /^(\d\d)-\d\d-\d\d$/) {		# get to the 21st century!
+      $d = ($1 eq '00' ? '00' . $d : '20' . $d);
+   }
+   $USERS{$u} = $d if (defined($USERS{$u}));
+}
+close(LOG);
+
+# merge in connect information from total accounting records
+open(ADDC,"csaaddc -A $opt_c |") ||
+   die "$prog: unable to exec 'csaaddc -A $opt_c': $!\n";
+while (my $line = <ADDC>) {
+   if ($line =~ /^\S*\s+(\S*)\s+.*$/) {
+      $USERS{$1} = $date;
+   }
+}
+close(ADDC);
+
+# store the result for future sorting
+my @ARRAY = ();
+foreach $u (keys %USERS) { push(@ARRAY,"$USERS{$u}  $u\n") }
+
+undef %USERS;
+
+# write out the result
+open(TMPLOG,">$TMPLOGINLOG") ||
+   die "$prog: unable to open $TMPLOGINLOG for writing: $!\n";
+print TMPLOG sort @ARRAY;
+close(TMPLOG);
+
+# fix up ownership/permissions
+chown $adm_uid, $adm_gid, $TMPLOGINLOG;
+chmod 0664, $TMPLOGINLOG;
+rename $TMPLOGINLOG, $LOGINLOG ||
+   die "$prog: unable to 'mv $TMPLOGINLOG $LOGINLOG': $!\n";
+
+exit 0;
+
+sub usage {
+   die "Usage: $prog -c infile\n";
+}

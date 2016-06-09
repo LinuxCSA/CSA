@@ -1,0 +1,18 @@
+.\"
+.\" Copyright (c) 2000-2007 Silicon Graphics, Inc.
+.\" All rights reserved.
+.\"
+.TH JSETHID 1 "12 December 2000" "Linux Utilities" "Linux User's Manual"
+.SH NAME
+jsethid \- enable unique job ID (jid) values
+.SH SYNOPSIS
+.BR "jsethid" " hex-value"
+.SH DESCRIPTION
+.B jsethid
+is used by startup scripts to enable generation of unique job ID (jid) values on systems within a cluster.
+.SH OPTIONS
+.TP
+.BR "hex-value"
+The value used by the current host for generation of unique (jid) values.  Normally, the host ID value is used for this purpose.
+.SH "SEE ALSO"
+.BR job (7)

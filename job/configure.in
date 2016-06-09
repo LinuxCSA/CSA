@@ -1,0 +1,52 @@
+dnl Process this file with autoconf to produce a configure script.
+AC_INIT(job, 2.0.1)
+AC_CONFIG_SRCDIR(config.h.in)
+
+dnl libtool version info
+joblibversion="2:1:0"
+AC_SUBST(joblibversion)
+
+dnl Automake initialization
+AM_INIT_AUTOMAKE
+
+dnl Set default directory for job PAM module
+if test `uname -m` = "x86_64"; then _64=64; fi
+jobpamdir="/lib$_64/security"
+AC_SUBST(jobpamdir)
+
+dnl Set default directory for job run script
+jobinitdir="/etc/init.d"
+AC_SUBST(jobinitdir)
+
+dnl Generate a configuration header
+AM_CONFIG_HEADER(config.h)
+
+dnl Checks for programs.
+AC_PROG_AWK
+AC_PROG_CC
+AC_ISC_POSIX
+AC_PROG_INSTALL
+AC_PROG_LN_S
+AC_PROG_LIBTOOL
+
+dnl Checks for libraries.
+AC_CHECK_LIB(pam, pam_get_item, [], [
+	echo "configure: pam required"
+	exit -1
+])
+AC_CHECK_LIB(cap, cap_get_flag, [], [
+	echo "configure: libcap required"
+	exit -1
+])
+
+dnl Checks for header files.
+AC_CHECK_HEADER(security/pam_modules.h, [], [
+	echo "configure: pam-devel required"
+	exit -1
+])
+AC_CHECK_HEADER(sys/capability.h, [], [
+	echo "configure: libcap-devel required"
+	exit -1
+])
+
+AC_OUTPUT(Makefile include/Makefile lib/Makefile jobd/Makefile pam/Makefile cmd/Makefile scripts/Makefile man/Makefile man/man1/Makefile man/man3/Makefile man/man7/Makefile man/man8/Makefile tests/Makefile)

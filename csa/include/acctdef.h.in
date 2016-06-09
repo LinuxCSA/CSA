@@ -1,0 +1,385 @@
+/*
+ * Copyright (c) 2000-2002 Silicon Graphics, Inc and LANL  All Rights Reserved.
+ * Copyright (c) 2004-2008 Silicon Graphics, Inc All Rights Reserved.
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as 
+ * published by the Free Software Foundation; either version 2 of
+ * the License, or (at your option) any later version.
+ * 
+ * This program is distributed in the hope that it would be useful, but 
+ * WITHOUT ANY WARRANTY; without even the implied warranty of 
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details. 
+ *
+ * You should have received a copy of the GNU General Public License along 
+ * with this program; if not, write to the Free Software Foundation, Inc.,
+ * 59 Temple Place - Suite 330, Boston MA 02111-1307, USA.
+ *
+ * Contact information:  Silicon Graphics, Inc., 1140 East Arques Avenue,
+ * Sunnyvale, CA  94085, or:
+ * 
+ * http://www.sgi.com 
+ */
+#ifndef	_ACCTDEF_H
+#define	_ACCTDEF_H
+
+#include <sys/types.h>
+#include <string.h>
+#include <unistd.h>
+#include <stdlib.h>
+#include <errno.h>
+#include <time.h>
+
+#include "csaacct.h"
+#include "cacct.h"
+#include "cms.h"
+#include "csa.h"
+
+#define DEFPACCT	"@csalocalstatedir@/day/pacct" 	/* default CSA pacct */
+#define CSAHOLIDAYS	"@csalocalstatedir@/csa.holidays"    /* CSA holidays */
+#define WPACCT		"@csalocalstatedir@/work/Wpacct"
+#define SPACCT		"@csalocalstatedir@/work/spacct" /* Sorted pacct file*/
+#define FEEFILE		"@csalocalstatedir@/day/fee"
+
+#define DEFCPUMASK	"all"
+
+#ifndef NODEV
+#define NODEV		(dev_t)(-1)	/* no device */
+#endif
+
+/*
+ * Environment variable to dynamically set the directory path name for the
+ * job accounting (ja) file.
+ */
+#define	ACCT_TMPDIR	"ACCT_TMPDIR"
+
+#define	TRUE		1
+#define	FALSE		0
+
+
+#define PRIME		0	/* PRIME time */
+#define NONPRIME	1	/* NON-PRIME time */
+
+#define LOGINSIZE       8       /* sizeof login name */
+#define END_OF_FILE	-1	/* Indicates that the length of a bad record
+				   is the end of the file - used by csaverify
+				   and csaedit. */
+
+#define CHK_AND_ASU(c)	(ASU == (ASU & c))
+#define SUM_ARRAY(c)	(c[PRIME] + c[NONPRIME])	
+
+#define TIME_FORMAT1	" %H:%M:%S"
+#define TIME_FORMAT2	" %H:%M:%S %m/%d/%Y"
+
+
+/*
+ * Macro to convert from a floating point to a long (64 bits).
+ * The conversion rounds when necessary.  If conversion is left to the C
+ * compiler, the decimal part is simply truncated.
+ */
+#define FTOL(fp)	((int64_t) ((fp) + 0.5))
+
+/*
+ * Unit conversion macros.
+ */
+#define SECSPERDAY		86400L
+#define KB_2_MB(kbytes)		((double) (kbytes) / 1024)
+#define MB_2_KB(mbytes)		((mbytes) * 1024)
+#define	TIME_2_SECS(uSec)	((double) (uSec) * 0.000001)
+#define	TIME_2_MINS(uSec)	((double) (uSec) / 60000000.0)
+#define	TIME_2_USECS(Sec)	((Sec) * 1000000)
+#define NSEC_2_SECS(nSec)	((double) (nSec) * 0.000000001)
+#define NSEC_2_MINS(nSec)	((double) (nSec) / 60000000000.0)
+
+
+
+/*
+ * Initialization variables for csa_config file.
+ */
+#define CHGRP		"CHGRP"			/* Change group */
+
+#define CSA_START	"CSA_START"		/* csa start status */
+#define IO_START	"IO_START"		/* io start status */
+#define MEM_START	"MEM_START"		/* mem start status */
+#define DELAY_START	"DELAY_START"		/* delay start status */
+#define MEMT_START	"MEMT_START"		/* memt start status */
+#define TIME_START	"TIME_START"		/* time start status */
+#define WKMG_START	"WKMG_START"		/* wkmg start status */
+
+#define HOLIDAY_FILE	"HOLIDAY_FILE"		/* holidays file name */
+#define HOLIDAY_NUM	"NUM_HOLIDAYS"		/* number of holidays defined */
+
+#define MEMORY_INTEGRAL	"MEMINT"		/* Default memory integral */
+#define MTTIME_WEIGHT	"MTTIME_WEIGHT"		/* Multi-tasking CPU time
+						   SBUs */
+
+#define WKMG_NUM_MACHINES "WKMG_NUM_MACHINES"   /* Number of wkmg machines */
+#define WKMG_MACHINE    "WKMG_MACHINE"          /* wkmg machine name */
+#define WKMG_NUM_QUEUES "WKMG_NUM_QUEUES"       /* Number of wkmg queues */
+#define WKMG_QUEUE      "WKMG_QUEUE"            /* wkmg queue name */
+#define WKMG_TERM_EXIT  "WKMG_TERM_EXIT"        /* wkmg exits */
+#define WKMG_TERM_REQUEUE "WKMG_TERM_REQUEUE"   /* wkmg requeues */
+#define WKMG_TERM_HOLD  "WKMG_TERM_HOLD"        /* wkmg checkpoints & holds */
+#define WKMG_TERM_RERUN "WKMG_TERM_RERUN"       /* wkmg reruns */
+#define WKMG_TERM_MIGRATE "WKMG_TERM_MIGRATE"   /* wkmg migrates */
+
+#define PACCT_FILE	"PACCT_FILE"		/* Path for the pacct file */
+#define CPUMASK		"CPUMASK"		/* CPU mask for taskstats */
+#define	RPT_MTASK_LO	"SGI_RPT_MTASK_LO"	/* Low mtask report bucket */
+#define	RPT_MTASK_HI	"SGI_RPT_MTASK_HI"	/* High mtask report bucket */
+
+/*
+ * Prime time weighting factors (SBUs).
+ */
+#define SBU_P_BASIC	"P_BASIC"		/* Basic */
+#define SBU_P_TIME	"P_TIME"		/* General time */
+#define SBU_P_UTIME	"P_UTIME"		/* User time */
+#define SBU_P_STIME	"P_STIME"		/* System time */
+#define SBU_P_MEM	"P_MEM"			/* General memory */
+#define SBU_P_XMEM	"P_XMEM"		/* CPU time core memory */
+#define SBU_P_VMEM	"P_VMEM"		/* CPU time virtual memory */
+#define SBU_P_IO	"P_IO"			/* General I/O */
+#define SBU_P_CIO	"P_CIO"			/* I/O chars xfer */
+#define SBU_P_LIO	"P_LIO"			/* Logical I/O */
+#define SBU_P_DELAY	"P_DELAY"		/* General delay */
+#define SBU_P_CPUDELAY	"P_CPUDELAY"		/* CPU delay */
+#define SBU_P_BLKDELAY	"P_BLKDELAY"		/* Block I/O delay */
+#define SBU_P_SWPDELAY	"P_SWPDELAY"		/* Swap in delay */
+#define	SBU_P_MPP	"P_MPP"			/* MPP general */
+#define	SBU_P_MPPPE	"P_MPPPE"		/* MPP PE time */
+#define	SBU_P_MPPBESU	"P_MPPBESU"		/* MPP Barrier/Eureka */
+#define SBU_P_MPPTIME	"P_MPPTIME"		/* MPP process connect time */
+
+/*
+ * Non-prime time weighting factors (SBUs).
+ */
+#define SBU_NP_BASIC	"NP_BASIC"		/* Basic */
+#define SBU_NP_TIME	"NP_TIME"		/* General time */
+#define SBU_NP_UTIME	"NP_UTIME"		/* User time */
+#define SBU_NP_STIME	"NP_STIME"		/* System time */
+#define SBU_NP_MEM	"NP_MEM"		/* General memory */
+#define SBU_NP_XMEM	"NP_XMEM"		/* CPU time core memory */
+#define SBU_NP_VMEM	"NP_VMEM"		/* CPU time virtual memory */
+#define SBU_NP_IO	"NP_IO"			/* General I/O */
+#define SBU_NP_CIO	"NP_CIO"		/* I/O chars xfer */
+#define SBU_NP_LIO	"NP_LIO"		/* Logical I/O */
+#define SBU_NP_DELAY	"NP_DELAY"		/* General delay */
+#define SBU_NP_CPUDELAY	"NP_CPUDELAY"		/* CPU delay */
+#define SBU_NP_BLKDELAY	"NP_BLKDELAY"		/* Block I/O delay */
+#define SBU_NP_SWPDELAY	"NP_SWPDELAY"		/* Swap in delay */
+
+
+/*
+ * The job file is a sorted pacct file that is generated by the csabuild
+ * program.  It is then read by the other programs in the CSA accounting
+ * system.
+ *
+ * The format of the file is
+ *     Config record:           Containing boot time information about all
+ *                              the jobs within the system uptime indicated
+ *                              by record.
+ *     # job master records:    Containing information about individual jobs
+ *                              within the uptime.
+ *         . . .
+ *     Repeating for each boot time configuration record found.
+ *
+ * Job master records are records which contain all the accounting data about
+ * a given user request for work.  This may be an interactive job or a batch
+ * work submission.
+ * The format of a job master record is 
+ *     Job header:       Containing information about the accounting records
+ *                       contained within the job.
+ *     # pacct records:  Kernel accounting records - including the SBU cost.
+ *     # wkmg records:   Workload management (i.e., LSF) daemon use records.
+ */
+
+/*
+ * Job header
+ *
+ * Written by csabuild to contain information related to a job.
+ *
+ * *_num fields are the number of that type of record.
+ * *_start fields are the offset from the END of the job header to the first
+ *     record of that type.
+ */
+#define	END_OF_JOB_C	1<<0	/* Job ended in crash */
+#define	END_OF_JOB_T 	1<<1	/* Job ended in timeout */
+#define	END_OF_JOB_B 	1<<2	/* Batch (LSF) job ended */
+#define	END_OF_JOB_I 	1<<3	/* Interactive job ended */
+#define	WKMG_IN_JOB	1<<8	/* Workload management records in job */
+
+struct acctjob
+{
+	struct achead	aj_hdr;		/* Record header */
+
+	int		aj_flags;	/* Record flags */
+	uint32_t	aj_uid;		/* User ID */
+	uint64_t	aj_jid;		/* Job ID */
+	time_t		aj_btime;	/* Start time of the last record in
+					   the job */
+	int64_t		aj_eop_start;	/* End of process record offset */
+	int		aj_eop_num;	/* Number of process records */
+	int64_t		aj_job_start;	/* soj, eoj, cfg record offset */
+	int		aj_job_num;	/* Number of soj, eoj, cfg records */
+	int64_t		aj_wkmg_start;	/* Workload management record offset */
+	int		aj_wkmg_num;	/* # of workload management records */
+
+	int64_t		aj_len;		/* Bytes from the end of the job
+					   header to the next job header */
+};
+
+
+/*
+ * Accounting entry definition.
+ *
+ * The following symbol and structure definitions are used in conjunction with
+ * reading/writing process accounting entries.  An entry consists of one or
+ * more accounting records (acct.h format).  All records in an entry pertain
+ * to the same process.
+ *
+ * The acctent structure has a field defined (char *ent) that must be set up
+ * by the caller of readacctent().  This field refers to a buffer area into
+ * which the accounting records will be read.  This entry buffer must consist
+ * of ACCTENTSIZ bytes.
+ */
+#define ACCTENTSIZ	(sizeof (struct acctcsa) + \
+			 sizeof (struct acctmem) + \
+			 sizeof (struct acctio)  + \
+			 sizeof (struct acctdelay))
+
+#define	FORWARD		0
+#define	BACKWARD	1
+
+struct acctent
+{
+	char		 *ent;	 /* Address of entry buffer, ACCTENTSIZ bytes */
+	struct achead	 *prime; /* Primary record */
+	struct acctcsa 	 *csa;	 /* Points to ACCT_KERNEL_CSA record */
+	struct acctmem 	 *mem;	 /* Points to ACCT_KERNEL_MEM record */
+	struct acctio	 *io;	 /* Points to ACCT_KERNEL_IO record */
+	struct acctdelay *delay; /* Points to ACCT_KERNEL_DELAY record */
+	struct acctsoj	 *soj;	 /* Points to ACCT_KERNEL_SOJ record */
+	struct accteoj	 *eoj;	 /* Points to ACCT_KERNEL_EOJ record */
+	struct acctcfg	 *cfg;	 /* Points to ACCT_KERNEL_CFG record */
+	struct acctjob	 *job;	 /* Points to ACCT_JOB_HEADER record */
+	struct wkmgmtbs	 *wmbs;	 /* Points to ACCT_DAEMON_WKMG record */
+	struct achead	 *other; /* Points to ACCT_KERNEL_SITE*,
+				    ACCT_DAEMON_SITE* record */
+};
+
+
+/*
+ * Map for dmacct request (request type).
+ */
+struct dm_type
+{
+	int	request;	/* Request value in dmacct */
+	char	*name;
+};
+
+static struct dm_type dm_reqmap[DM_MAXREQ] =
+{
+/*index request  name            xfer_type_name */
+/*0*/	4,	"Backup",	/* Process backup request */
+/*1*/	5,	"Free",		/* Free disk space request */
+/*2*/	6,	"Recall",	/* Process recall request */
+};
+
+
+/*
+ * Return values for check_file() in lib/basic.c.
+ */
+typedef enum
+{
+	CHK_SUCCESS,
+	CHK_BAD_OWNER,
+	CHK_BAD_GROUP,
+	CHK_BAD_MODE,
+	CHK_NOT_CREATED,
+	CHK_STAT_FAILED,
+	CHK_CANNOT_SET_MODE,
+	CHK_CANNOT_SET_GROUP,
+	CHK_CANNOT_SET_OWNER,
+	CHK_FILE_NOT_REGULAR,
+	CHK_CANNOT_GET_MAC,
+	CHK_CANNOT_SET_MAC
+} check_file_retval;
+
+/*
+ * Return values for check_hdr() and check_hdr2() in lib/valid.c.
+ */
+typedef enum
+{
+	HDR_NO_ERROR,
+	BAD_MAGIC,
+	BAD_TYPE,      /* Header type is not what is expected. */
+	BAD_REVISION,
+	BAD_SIZE
+} hdr_retval;
+
+/*
+ * Return values for invalid_* functions in lib/valid.c
+ */
+typedef enum
+{
+	INV_NO_ERROR,
+	HEADER_ERROR,
+	OTHER_ERROR   /* Not header error. */
+} invalid_retval;
+
+/*
+ * Prototypes for functions in "acct.a"
+ */
+uid_t	name_to_uid(char *);
+void	pnp_separate(long, long, long[2]);
+char	*uid_to_name(uid_t);
+char	*gid_to_name(gid_t);				/* name_to_gid.c */
+char	*prid_to_name(uint64_t);			/* name_to_prid.c */
+
+
+/*
+ * New prototypes for functions in "acct.a" - added for CSA.
+ */
+int	openacct(char *, const char*);			/* acctio.c */
+void	closeacct(int);					/* acctio.c */
+off_t	seekacct(int, off_t, int);			/* acctio.c */
+int	readacct(int, char *, int);			/* acctio.c */
+int	writeacct(int, char *, int);			/* acctio.c */
+int	readpacct(int, char *, int);			/* acctio.c */
+int	writepacct(int, void *, int);			/* acctio.c */
+int	readacctent(int, struct acctent *, int);	/* acctio.c */
+int	writeacctent(int, struct acctent *);		/* acctio.c */
+int	readcacct(int, struct cacct *);			/* acctio.c */
+int	writecacct(int, struct cacct *);		/* acctio.c */
+int	readcms(int, struct cms *);			/* acctio.c */
+int	writecms(int, struct cms *);			/* acctio.c */
+
+check_file_retval check_file(char *, char *, char *, mode_t);	/* basic.c */
+int	getoptlst(char *, char ***);			/* basic.c */
+
+char	*config(char *);				/* config.c */
+void	get_mttime(u_int64_t *, struct acctent *);	/* get_mttime.c */
+int	create_hdr1(struct achead *, int);		/* header.c */
+
+void	init_pacct_sbu(void);				/* init_pacct.c */
+void	init_wm_sbu(void);				/* init_wm.c */
+
+char	*init_char(char *, char *, int);		/* init_val.c */
+int	init_int(char *, int, int);			/* init_val.c */
+double	init_real(char *, double, int);			/* init_val.c */
+
+gid_t	name_to_gid(char *);				/* name_to_gid.c */
+uint64_t name_to_prid(char *);				/* name_to_prid.c */
+
+double	process_sbu(struct acctent *);			/* sbu.c */
+double	wm_sbu(struct wkmgmtbs *);			/* sbu.c */
+double	ucputime(struct acctent *);			/* ucputime.c */
+
+hdr_retval check_hdr(struct achead *, char *, int, int);	/* valid.c */
+hdr_retval check_hdr2(struct achead *, char *, int, int);	/* valid.c */
+invalid_retval invalid_pacct(struct acctent *, char *);		/* valid.c */
+invalid_retval invalid_wm(struct wkmgmtbs *, char *);		/* valid.c */
+invalid_retval invalid_cwm(struct wkmgmtbs *, char *);		/* valid.c */
+
+#endif	/* _ACCTDEF_H */

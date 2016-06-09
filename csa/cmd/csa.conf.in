@@ -1,0 +1,320 @@
+# Copyright (c) 2000-2007 Silicon Graphics, Inc and LANL  All Rights Reserved.
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as 
+# published by the Free Software Foundation; either version 2 of
+# the License, or (at your option) any later version.
+# 
+# This program is distributed in the hope that it would be useful, but 
+# WITHOUT ANY WARRANTY; without even the implied warranty of 
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details. 
+#
+# You should have received a copy of the GNU General Public License along 
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 59 Temple Place - Suite 330, Boston MA 02111-1307, USA.
+#
+# Contact information:  Silicon Graphics, Inc., 1140 East Arques Avenue,
+# Sunnyvale, CA  94085, or:
+# 
+# http://www.sgi.com 
+# 
+#
+#	This file contains the parameter labels and values used by the
+#	Comprehensive System Accounting (CSA) software.
+#
+
+# The CPUMASK parameter is used to select the processors for which taskstats
+# will report accounting information.  Specify "all" to select all processors.
+#
+CPUMASK		all
+
+# The PACCT_FILE parameter is used to change the default location of the CSA
+# pacct file.  This is the output file for process and daemon accounting.
+# 
+PACCT_FILE	@csalocalstatedir@/day/pacct
+
+############################################################################
+#
+#	Initial accounting states for process, daemon, and record
+# accounting.  The following section contains the accounting state
+# parameters that can be reset by the site.
+#
+############################################################################
+#
+#
+# The CSA_START parameter enables csa accounting.
+# Valid values are "on" and "off".
+#
+CSA_START	on
+
+#
+# The WKMG_START parameter enables  wkmg (workload management) accounting.
+# Valid values are "on" and "off".
+# If wkmg accounting is enabled here, it must also be enabled by the
+# workload manager using its appropriate method.
+#
+WKMG_START	off
+
+#
+# The following parameters enable different types of record
+# accounting.
+# Valid values are "on" and "off".
+#
+MEM_START	on
+IO_START	on
+DELAY_START	on
+
+#
+# The following parameters enable different types of threshold.
+# Valid state values are "on" and "off".  A positive numerical threshold
+# value must be specified if the state is "on".
+#
+# NAME		State,	Param
+MEMT_START	off	1000	# Memory in Kbytes
+TIME_START	off	1	# Time in seconds
+
+############################################################################
+#
+#	Default command option used by csarun which are sometimes reset.
+# The following section contains the default calling command options that
+# can be reset by the site.
+#
+############################################################################
+# The CSABUILD parameter sets the csabuild() parameters {} for the 
+# call from the csarun script.  A bad parameter will cause the script
+# to fail.
+# 
+CSABUILD	-i
+
+# The CSACMS parameter sets the csacms() parameters for the
+# call from the csarun script.  A bad parameter will cause the script
+# to fail.
+#
+CSACMS		-Sacj
+
+# The CSACREP parameter sets the csacrep() parameters {-hucw} for the 
+# call from the csarun and csaperiod scripts.  A bad parameter will
+# cause the script to fail.
+# 
+CSACREP		-hucw
+
+# The CSADREP parameter sets the csadrep() parameters {-a} for the 
+# call from the csarun script.  A bad parameter will cause the script
+# to fail.
+# 
+CSADREP		-a
+
+# The CSARECY parameter sets the csarecy() parameters {-r} for the 
+# call from the csarun script.  A bad parameter will cause the script
+# to fail.
+# 
+CSARECY		-r
+
+# The CHMOD parameter is used by the csarun and csaperiod scripts  
+# when creating the required accounting directories.  A bad mask
+# value will cause the script to fail.
+# 
+CHMOD		770
+
+# The CHGRP parameter is used by the csarun and csaperiod scripts  
+# when creating the required accounting directories.  A bad group
+# will cause the script to fail.
+# 
+CHGRP		csaacct
+
+# The UMASK parameter is used by the csarun and csaperiod scripts  
+# when creating the required accounting files.  A bad mask will
+# cause the script to fail.
+# 
+UMASK		0017
+
+
+############################################################################
+#
+#	Miscellaneous parameters which are sometimes reset.
+# The following section contains miscellaneous parameters that can be
+# reset by the site.
+#
+############################################################################
+#
+# The ACCT_FS parameter defines the file system on which @csalocalstatedir@
+# resides.  It is used when checking the amount of free space on
+# @csalocalstatedir@/.
+#
+ACCT_FS		@csalocalstatedir@
+
+#
+# The HOLIDAY_FILE parameter defines the location of the holidays file.
+# This parameter should be an absolute pathname.
+#
+HOLIDAY_FILE	@sysconfdir@/csa.holidays
+
+# The NUM_HOLIDAYS parameter sets the upper limit on the number of
+# holidays that can be defined in HOLIDAY_FILE.
+#
+NUM_HOLIDAYS	20
+
+#
+# The MAIL_LIST parameter is a list of users to whom mail is sent
+# if Fatal errors are detected in the various shell scripts.
+# The WMAIL_LIST parameter is a list of users to whom mail is sent
+# if Warning errors are detected by the csarun script at cleanup time.
+#
+MAIL_LIST	"root"
+WMAIL_LIST	"root"
+
+#
+# The MEMINT parameter is used to select the memory integral.
+#
+MEMINT		1
+
+#
+# The MIN_BLKS parameter sets the minimum number of free blocks on the
+# ACCT_FS filesystem that need to be available.  If less than MIN_BLKS
+# free blocks is available, accounting is disabled, or processing via
+# csarun is halted.  Block size is 1024 bytes.
+#
+MIN_BLKS	2000
+
+
+###########################################################################
+#
+#	Workload Management SBUs.
+#  The following section contains the labels and values which pertain to
+#  workload management accounting.
+#
+###########################################################################
+#
+#       Set the values to 1 if jobs, or portion of jobs, which
+#       terminate with the specified termination code are to be billed.
+#       Otherwise, set the value to 0.  By default, all portions of a
+#       request will have sbus calculated for them.
+#
+#       Currently, LSF only uses WKMG_TERM_EXIT.
+#
+WKMG_TERM_EXIT          1               # Request exited
+WKMG_TERM_REQUEUE       1               # Request requeued
+WKMG_TERM_HOLD          1               # Request checkpointed and held
+WKMG_TERM_RERUN         1               # Request rerun
+WKMG_TERM_MIGRATE       1               # Request migrated
+
+#
+#	Set WKMG_NUM_QUEUES to be the number of queues for which you want
+#	to set sbus.  
+#
+WKMG_NUM_QUEUES		3
+
+#
+#	Set the sbus associated with each queue.  There must be 
+#	WKMG_NUM_QUEUES sbu/queue pairs.  The labels' numeric suffixes
+#	must be ascending from 0 to (WKMG_NUM_QUEUES - 1).  Thus, if
+#	WKMG_NUM_QUEUES is 0, no WKMG_QUEUEx values need to be defined.
+#
+#	If an sbu value is set to less than 1.0, there is an incentive
+#	to run jobs in this queue.  If the value is set to 1.0, the
+#	jobs will be charged as though it were a normal, non-WKMG job.
+#	If the sbu is set to 0.0, there is no charge for jobs running 
+#	in this queue.  For queues not listed below, the sbu is set
+#	to 1.0.
+#
+#  label	sbu	queue_name
+WKMG_QUEUE0	1.0	b_30_5
+WKMG_QUEUE1	1.0	b_600_1
+WKMG_QUEUE2	1.0	b_1200_1
+
+#
+#	Set WKMG_NUM_MACHINES to the number of originating machines for
+#	which you want to set sbus.
+#
+WKMG_NUM_MACHINES		2
+
+#
+#	Set the sbus associated with each originating machine.  There must
+#	be WKMG_NUM_MACHINES sbu/machine pairs.  The sbu values are set
+#	in the same manner as those for the queues.  Once again, the 
+#	numeric label suffixes must be ascending from 0 to
+#	(WKMG_NUM_MACHINES - 1).  Thus, if WKMG_NUM_MACHINES is 0, no
+#	WKMG_MACHINEx values need to be defined.
+#
+#  label	sbu	machine_name
+WKMG_MACHINE0	1.0	linux3
+WKMG_MACHINE1	1.0	linux4
+
+
+###########################################################################
+#
+#	Process SBUs.
+#  The following section contains the labels and values which pertain to
+#  process accounting.
+#
+###########################################################################
+#
+#	Set the prime time weighting factors.
+#
+P_BASIC		0.0	# Basic prime time weight
+
+P_TIME		0.0	# General time weight
+P_STIME		0.0	#   System CPU time weight [Sec]
+P_UTIME		0.0	#   User CPU time weight [Sec]
+
+P_MEM		0.0	# General memory weighting factor
+P_XMEM		0.0	#   CPU time core memory weight [Mbyte-Min]
+P_VMEM		0.0	#   CPU time virtual mem weighting factor [Mbyte-Min]
+
+P_IO		0.0	# General I/O weight factor
+P_CIO		0.0	#   I/O chars xfer weighting factor
+P_LIO		0.0	#   Logical I/O (read/write syscalls) weighting factor
+
+P_DELAY		0.0	# General delay weighting factor
+P_CPUDELAY	0.0	#   CPU delay weighting factor [Sec]
+P_BLKDELAY	0.0	#   Block I/O delay weighting factor [Sec]
+P_SWPDELAY	0.0	#   Swap in delay weighting factor [Sec]
+
+
+#
+#	Set the non-prime time weighting factors.
+#
+NP_BASIC	0.0	# Basic non-prime time weighting factor
+
+NP_TIME		0.0	# General time weight
+NP_STIME	0.0	#   System CPU time weight
+NP_UTIME	0.0	#   User CPU time weight
+
+NP_MEM		0.0	# General memory weight
+NP_XMEM		0.0	#   CPU time core memory weighting factor
+NP_VMEM		0.0	#   CPU time virtual memory weighting factor
+
+NP_IO		0.0	# General I/O weight
+NP_CIO		0.0	#   I/O chars xfer weighting factor
+NP_LIO		0.0	#   Logical I/O (read/write syscalls) weighting factor
+
+NP_DELAY	0.0	# General delay weighting factor
+NP_CPUDELAY	0.0	#   CPU delay weighting factor
+NP_BLKDELAY	0.0	#   Block I/O delay weighting factor
+NP_SWPDELAY	0.0	#   Swap in delay weighting factor
+
+
+############################################################################
+#
+#	Miscellaneous parameters generally not reset.
+# The following section contains miscellaneous parameters that are not
+# generally changed by a site.  Care must be used when some of these are 
+# modified.
+#
+############################################################################
+#
+# The BUILD_MAXFILES parameter sets the upper limit on the number
+# of files which can be processed by csabuild(8).
+#
+BUILD_MAXFILES	200
+
+############################################################################
+#
+#	User defined labels.
+# The following section contains user defined labels and values.
+# These labels are used in the site tailored sbu routines.  The
+# format of the following lines must be:
+#	label		value
+#
+############################################################################

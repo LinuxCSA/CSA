@@ -1,0 +1,135 @@
+.\"
+.\" (C) 2000-2007 Silicon Graphics, Inc.  All Rights Reserved.
+.\"
+.\" This documentation supports a
+.\" program that is free software; you can redistribute it and/or modify it
+.\" under the terms of version 2 of the GNU General Public License as
+.\" published by the Free Software Foundation.
+.\"
+.\" The documentation that supports
+.\" this program is distributed in the hope that it will be useful, but
+.\" WITHOUT ANY WARRANTY; without even the implied warranty of
+.\" MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+.\"
+.\" Further, this documentation and the software it
+.\" supports, are distributed without any warranty that it is
+.\" free of the rightful claim of any third person regarding infringement
+.\" or the like.  Any license provided herein, whether implied or
+.\" otherwise, applies only to this software file.  Patent licenses, if
+.\" any, provided herein do not apply to combinations of this program with
+.\" other software, or any other product whatsoever.
+.\"
+.\" You should have received a copy of the GNU General Public License along
+.\" with this program; if not, write the Free Software Foundation, Inc., 59
+.\" Temple Place - Suite 330, Boston MA 02111-1307, USA.
+.\"
+.\" Contact information:  Silicon Graphics, Inc., 1140 East Arques Avenue,
+.\" Sunnyvale, CA  94085, or:
+.\"
+.\" http://www.sgi.com
+.\"
+.\" For further information regarding this notice, see:
+.\"
+.\" http://oss.sgi.com/projects/GenInfo/NoticeExplan
+.\"
+.TH csacms 8
+.SH NAME
+csacms \- summarizes command usage from per-process
+accounting records
+.SH SYNOPSIS
+\f4@sbindir@/csacms\f1
+[\f4-a\f1\ [[[\f4-p\f1]\ [\f4-o\f1]]\ [\f4-e\f1]]]
+[\f4-c\f1]
+[\f4-j\f1]
+[\f4-n\f1]
+[\f4-s\f1]
+[\f4-S\f1\ [\f4-A\f1]]
+\f2files\f1
+.SH DESCRIPTION
+The \f4csacms\f1 command reads
+the pact file, sorted pact
+file, or files previously put into
+internal summary format as determined by
+the input option.
+To do this, the \f4csacms\f1 command
+adds all the records for processes
+that have executed the same commands.
+It then sorts them and writes them
+to stardard output. Typically, it
+uses an internal summary format to do this.
+.PP
+\f4csacms\f1 accepts the following options:
+.TP 5
+\f4-a\f1
+This option produces text output.
+You can use the following options only with
+the \f4-a\f1 option:
+.RS
+.TP 5
+\f4-p\f1
+Outputs a prime-time-only command summary.
+.TP
+\f4-o\f1
+Outputs a nonprime-time-only (offshift) command summary.
+.TP
+\f4-e\f1
+Outputs an extended report, printing additional fields.
+.PP
+The default output produced with the \f4-a\f1 option
+includes command name,
+number of times executed,
+total kcore-minutes,
+total kvirtual-minutes,
+total CPU minutes,
+total real minutes,
+mean core size (in K),
+mean virtual size (in K),    
+mean CPU minutes per invocation,
+the amount of CPU resources
+(proportional to other processes) used,
+and k-characters read and written.
+Read and written values are printed separately.
+The output is sorted by total kcore-minutes,
+unless you specify a sort option.
+.PP
+The high-water usage values for core and virtual
+memory are presented as both a prime-time value and
+nonprime-time value.
+.PP
+When you specify both \f4-p\f1 and \f4-o\f1 with \f4-a\f1,
+\f4csacms\f1 produces a combination prime or nonprime time report. 
+.PP
+The extended report prints the following:
+high-water core memory usage value, high-water virtual
+memory usage value, the number of read and write
+system calls (printed separately), system time,
+minor faults, major faults, CPU delay time,
+block I/O delay time, and swap in delay time.
+.PP
+.RE
+.TP
+\f4-c\f1
+Sorts by total CPU
+time (not total kcore-minutes).
+.TP
+\f4-j\f1
+Combines all commands invoked only once under ``\(**\(**\(**other''.
+.TP
+\f4-n\f1
+Sorts by number of command invocations.
+.TP
+\f4-s\f1
+Indicates that 
+files supplied to this command are already in internal format.
+.TP
+\f4-S\f1
+Indicates that the sorted pacct file format is used on input.
+.TP
+\f4-A\f1
+Causes all jobs (even nonterminated jobs) to be considered.
+You must use this option with the
+\f4-S\f1 option.
+.SH SEE ALSO
+csa(8),
+csacom(1),
+csarun(8).

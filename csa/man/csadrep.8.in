@@ -1,0 +1,137 @@
+.\"
+.\" (C) 2000-2007 Silicon Graphics, Inc.  All Rights Reserved.
+.\"
+.\" This documentation supports a
+.\" program that is free software; you can redistribute it and/or modify it
+.\" under the terms of version 2 of the GNU General Public License as
+.\" published by the Free Software Foundation.
+.\"
+.\" The documentation that supports
+.\" this program is distributed in the hope that it will be useful, but
+.\" WITHOUT ANY WARRANTY; without even the implied warranty of
+.\" MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+.\"
+.\" Further, this documentation and the software it
+.\" supports, are distributed without any warranty that it is
+.\" free of the rightful claim of any third person regarding infringement
+.\" or the like.  Any license provided herein, whether implied or
+.\" otherwise, applies only to this software file.  Patent licenses, if
+.\" any, provided herein do not apply to combinations of this program with
+.\" other software, or any other product whatsoever.
+.\"
+.\" You should have received a copy of the GNU General Public License along
+.\" with this program; if not, write the Free Software Foundation, Inc., 59
+.\" Temple Place - Suite 330, Boston MA 02111-1307, USA.
+.\"
+.\" Contact information:  Silicon Graphics, Inc., 1140 East Arques Avenue,
+.\" Sunnyvale, CA  94085, or:
+.\"
+.\" http://www.sgi.com
+.\"
+.\" For further information regarding this notice, see:
+.\"
+.\" http://oss.sgi.com/projects/GenInfo/NoticeExplan
+.\"
+.TH csadrep 8
+.SH NAME
+\f4csadrep\f1 \- reports daemon usage
+.SH SYNOPSIS
+.nf
+\f4@sbindir@/csadrep\f1 [\f4-D\f1\ \f1level\f1] [\f4-o\f1\ \f1ofile\f1] \c
+[\f4-A\f1] [\f4-s\f1\ \f1sfile\f1] [ [\f4-a\f1] | [ [\f4-j\f1] \c
+[\f4-n\f1] ] [\f4-V\f1\ \f1level\f1]
+.sp .8v
+\f4@sbindir@/csadrep\f1 [\f4-D\f1\ \f1level\f1] [\f4-o\f1\ \f1ofile\f1 \c
+[\f4-N\f1]] [\f4-A\f1] [\f4-s\f1\ \f1sfile\f1]
+.sp .8v
+\f4@sbindir@/csadrep\f1 [\f4-D\f1\ \f1level\f1] [\f4-o\f1\ \f1ofile\f1] \c
+[ \f4-a\f1 | [ [\f4-j\f1] [\f4-n\f1] ] ] \c
+[\f4-V\f1\ \f1level\f1] \f1files\f1
+.sp .8v
+\f4@sbindir@/csadrep\f1 [\f4-D\f1\ \f1level\f1] \c
+[\f4-o\f1\ \f1ofile\f1\ [\f4-N\f1]] \f2files\f1
+.fi
+.SH DESCRIPTION
+The \f4csadrep\f1 command reports usage
+of the workload management.
+Input is either from a \f2sorted pacct\f1 file created by \f4csabuild\f1(8)
+or from a binary file created by
+\f4csadrep\f1 with the \f4-o\f1 option.
+The \f4files\f1 operand specifies the binary files.
+.PP
+The usage report is written to \f4stdout\f1.
+.PP
+The \f4csadrep\f1 command accepts three types of options:
+input, output, and report selection options.
+.SS Input Option
+The \f4csadrep\f1 command accepts the following input option.
+.TP 10
+\f4-s\f1\ \f1sfile\f1
+Specifies the name of the \f2sorted pacct\f1 file.
+The \f4csabuild\f1(8) command creates this file.
+The default is \f4@csalocalstatedir@/work/spacct\f1.
+.PP
+.SS Output Options
+The \f4csadrep\f1 command accepts the following output options.
+.TP 10
+\f4-D\f1\ \f1level\f1
+Sets the debugging level.
+The level range is from 1 to 2.
+Level 0 turns debugging off; level 1 is slightly verbose; and level 2 is verbose.
+Debug output is written to \f4stderr\f1.
+By default, debugging is turned off.
+.TP
+\f4-o\f1 \f1ofile\f1
+Specifies the name of the binary output file.
+\f4csadrep\f1 can process this file, using the \f4files\f1 parameter.
+.TP
+\f4-A\f1
+Reports all jobs, including those that have not completed.
+By default, only jobs that have completed are reported.
+.TP
+\f4-N\f1
+Does not generate a usage report.
+You must use the \f4-o\f1 option with this option.
+.TP
+\f4-V\f1\ \f1level\f1
+Sets the verbose level of the usage report.
+The levels are 0 through 4.
+Level 0 is terse, and level 4 is extremely verbose.
+The default is level 0.
+.SS Report Selection Options
+The \f4csadrep\f1 command accepts
+the following report selection options.
+.TP 10
+\f4-a\f1
+Reports usage for all daemons.
+This is equivalent to \f4-jn\f1.
+.TP
+\f4-j\f1
+Reports batch and interactive job usage.
+This is the default.
+Batch in this case is workload management usage.
+.TP
+\f4-n\f1
+Reports workload daemon usage.
+.SH EXAMPLES
+Example 1:
+The following example generates a very verbose usage
+report for all the daemons.
+Input is from the \f2sorted pacct\f1 file (\f4spacct\f1).
+Binary output file \f4drep.1\f1 is created.
+.RS .5i
+.PP
+\f4csadrep -a -V 4 -s spacct -o drep.1\f1
+.RE
+.PP
+Example 2:
+The following example generates
+a terse usage report for all the daemons.
+Input is from three previously created binary files.
+.RS .5i
+.PP
+\f4csadrep -a drep.1 drep.2 drep.3\f1
+.RE
+.PP
+.SH SEE ALSO
+csabuild(8).

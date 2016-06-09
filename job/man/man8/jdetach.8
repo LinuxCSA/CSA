@@ -1,0 +1,31 @@
+.\"
+.\" Copyright (c) 2000-2007 Silicon Graphics, Inc.
+.\" All rights reserved.
+.\"
+.TH JDETACH 8 "4 October 2005" "Linux Utilities" "Linux User's Manual"
+.SH NAME
+jdetach \- Detach a group of processes from a job
+.SH SYNOPSIS
+.BR "jdetach" " -p pid | -j jid "
+.br
+.SH DESCRIPTION
+.B jdetach
+allows a process, or all processes attached to a job, to be detached
+from a job.  The processes are allowed to continue running after they
+are detached.  This command is useful for those occasions where you
+accidently start a daemon process within a job and need to move that
+daemon process out of the job.
+.PP
+To successfully detach a process from a job, the user must be root or
+have the CAP_SYS_RESOURCE capability.
+.SH OPTIONS
+The \f4jdetach\f1 command accepts that following options:
+.TP 20
+\f4-p\f1 \f2pid\f1
+Detach the process identified by the specified \f2pid\f1 (process ID).
+.TP
+\f4-j\f1 \f2jid\f1
+Detach all processes attached to the job specified by \f2jid\f1 (job ID).
+.SH "SEE ALSO"
+.BR job (7)
+.BR jattach (8)

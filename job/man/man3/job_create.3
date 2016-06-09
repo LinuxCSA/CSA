@@ -1,0 +1,53 @@
+.\"
+.\" Copyright (c) 2003-2007 Silicon Graphics, Inc.  
+.\" All Rights Reserved.
+.\"
+.TH job_create 3
+.SH NAME
+job_create \- Create a new job.
+.SH SYNOPSIS
+.nf
+\f3#include <job.h>\f1
+.sp .8v
+\f3jid_t job_create( jid_t jid_requested, uid_t uid, int options );\f1
+.fi
+.SH DESCRIPTION
+The \f4job_create\f1 library call is part of the job library that allows
+processes to manipulate and obtain status about linux jobs.
+When the job library is to be used, the
+\f3job.h\f1 header file should be included to obtain the proper definitions.
+.PP
+\f4job_create\f1 
+will create a new job and attach the calling process to the new job.
+.PP
+If the process is already part of a job, it is detached from the current job
+and attached to the new one.
+.PP
+The \f2jid_requested\f1 parameter allows the caller to specify a jid value
+to use when creating the job.
+If the caller wants the system to generate the job ID,
+then set \f2jid_requested\f1 to 0.
+The \f2uid\f1 parameter is used to supply the user ID
+value for the user that will own the job.
+The \f2options\f1 parameter is for future use.
+.PP
+.SH DIAGNOSTICS
+Upon successful completion, \f2job_create\f1 returns
+the job ID of the new job.
+Otherwise, a value of (jid_t)-1 is returned and \f3errno\f1 is set to
+indicate the error.
+.PP
+Note: The returned value is an unsigned integer.  To test for -1, you will 
+need to use a cast.  Here is an example:
+.br
+.nf
+
+  jid = job_create(0, getuid(), 0);
+  if (jid == (jid_t)-1) {
+          perror("job error");
+  }
+.fi
+.PP
+.SH SEE ALSO
+job_detachjid(3), job_detachpid(3), job_attachpid(3), job_getjid(3), job_getjidcnt(3), job_getjidlist(3), job_getpidcnt(3), job_getpidlist(3), job_getprimepid(3), job_getuid(3), job_killjid(3), job_sethid(3), job_waitjid(3),  job(7).
+

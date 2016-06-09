@@ -1,0 +1,315 @@
+.\"
+.\" (C) 2000-2007 Silicon Graphics, Inc.  All Rights Reserved.
+.\"
+.\" This documentation supports a
+.\" program that is free software; you can redistribute it and/or modify it
+.\" under the terms of version 2 of the GNU General Public License as
+.\" published by the Free Software Foundation.
+.\"
+.\" The documentation that supports
+.\" this program is distributed in the hope that it will be useful, but
+.\" WITHOUT ANY WARRANTY; without even the implied warranty of
+.\" MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+.\"
+.\" Further, this documentation and the software it
+.\" supports, are distributed without any warranty that it is
+.\" free of the rightful claim of any third person regarding infringement
+.\" or the like.  Any license provided herein, whether implied or
+.\" otherwise, applies only to this software file.  Patent licenses, if
+.\" any, provided herein do not apply to combinations of this program with
+.\" other software, or any other product whatsoever.
+.\"
+.\" You should have received a copy of the GNU General Public License along
+.\" with this program; if not, write the Free Software Foundation, Inc., 59
+.\" Temple Place - Suite 330, Boston MA 02111-1307, USA.
+.\"
+.\" Contact information:  Silicon Graphics, Inc., 1140 East Arques Avenue,
+.\" Sunnyvale, CA  94085, or:
+.\"
+.\" http://www.sgi.com
+.\"
+.\" For further information regarding this notice, see:
+.\"
+.\" http://oss.sgi.com/projects/GenInfo/NoticeExplan
+.\"
+.TH csarun 8
+.SH NAME
+csarun \- processes the daily accounting files
+and generates reports
+.SH SYNOPSIS
+\f4@sbindir@/csarun\f1
+[\f4-A\f1]
+[\f4-V\f1\ \f2level\f1]
+[\f2MMDD\f1\ [\f2hhmm\f1\ [\f2state\f1]]]
+.SH DESCRIPTION
+The \f4csarun\f1 command, usually initiated by \f4cron\f1(8),
+directs the processing of the daily accounting files.
+\f4csarun\f1 processes accounting records written into
+the \f2pacct\f1 file.
+.PP
+When an error occurs,
+the \f4csarun\f1 command does
+not damage the active
+accounting file.
+While the \f4csarun\f1 command
+is executing, diagnostic
+messages are written
+to an \f4active\f1 file.
+When an error occurs,
+a message is written
+to the SYSLOG file and
+mail is sent to the
+\f4root\f1 user. Further
+data processing is stopped.
+.PP
+Before invoking \f4csarun\f1 on a new accounting
+period, ensure that the previous invocation of
+\f4csarun\f1 has completed successfully.
+If this is not done,
+information about unfinished jobs will not be accurate.
+.PP
+The \f4lock\f1 and \f4lock1\f1 files
+prevent processes from
+invoking \f4csarun\f1 at the
+same time.
+.PP
+The \f4csarun\f1 command accepts the following options and operands:
+.TP 10
+\f4-A\f1
+Accounts for both terminated and active jobs.
+By default, only terminated jobs are reported.
+\f4csarun\f1 does not recycle active jobs when this option is specified. 
+.TP
+\f4-V \f2level\f1
+Controls verification level of accounting data files.
+.RS 10
+.TP 15
+\f3Level\f1
+\f3Description\f1
+.TP
+level 0
+Run \f4csaverify\f1 and \f4csaedit\f1; this is the default 
+.TP
+level 1
+Run \f4csaverify\f1 only
+.TP
+level 2
+Do not run \f4csaverify\f1
+.RE
+.TP 10
+\f2MMDD\f1 [\f2hhmm\f1 [\f2state\f1]]
+Sets month, day, hour, minute, and state for which
+\f4csarun\f1 will rerun the accounting.
+If \f4csarun\f1 is restarted, the month and day are necessary;
+other portions are optional.
+If you supply the \f2state\f1 on the command line, you must also
+specify \f2hhmm\f1.
+.PP
+The \f4csarun\f1 command
+processing is broken out into separate
+and restartable states by 
+using information in \f4statefile\f1 to determine
+the last state completed.
+To do this, the \f4csarun\f1 command
+writes the state name of the
+file into \f4statefile\f1.
+The \f4csarun\f1 command examines
+the \f4statefile\f1 to determine
+what must be processed next.
+.PP
+The state are executed in
+the order that follows:
+.TP 15
+\f3State Name\f1
+\f3Description\f1
+.TP
+\f4SETUP\f1
+The SETUP state moves
+active acounting files into
+a work directory.
+.TP
+\f4VERIFY\f1
+Verifies the integrity of the data files.
+.TP
+\f4ARCHIVE1\f1
+User exit that executes a site-generated accounting script 
+to archive the accounting files.
+.TP
+\f4BUILD\f1
+Organizes the accounting data into a \f4sorted pacct\f1 file.
+.TP
+\f4ARCHIVE2\f1
+User exit that executes a site-generated accounting 
+script to archive the \f4sorted pacct\f1 file.
+.TP
+\f4CMS\f1
+Generates command summaries.
+.TP
+\f4REPORT\f1
+Generates daily accounting reports.
+.TP
+\f4DREP\f1
+Generates daemon usage report.
+.TP
+\f4FEF\f1
+User exit that executes a site-generated accounting script 
+to format the \f4sorted pacct\f1 file into
+a format that is suitable for use on a front end.
+.TP
+\f4USEREXIT\f1
+User exit that executes a site-generated 
+accounting script.
+.TP
+\f4CLEANUP\f1
+The CLEANUP state cleans up
+temporary files and exits.
+.PP
+After a failure,
+make sure you check
+active files for diagnostics
+and fix any corrputed \f2pacct\f1
+files, before restarting the \f4csarun\f1 command
+You must also remove the lock files before
+you can restart \f4csarun\f1.
+When you restart \f4csarun\f1, you must
+specify the \f2MMDD\f1 operand, which
+specifies the month and day for which
+\f4csarun\f1 will rerun accounting.
+The contents of the \f2statefile\f1 determines
+the entry point for processing.
+You can override this entry point
+by entering the desired state on
+the command line to direct
+the location where processing
+should begin.
+.SH NOTES
+The mail recipients (\f4root\f1 by default)
+can be changed by modifying the \f4MAIL_LIST\f1  and
+\f4WMAIL_LIST\f1 parameters in the \f4@sysconfdir@/csa.conf\f1 file.
+You also can change the other parameters defined in the
+accounting configuration file for your site.
+.PP
+\f4csarun\f1 checks the number of free blocks in the filesystem
+that contains the accounting files to ensure
+that it consists of more than 2000 blocks.
+Block size is 1024 bytes.
+By default, \f4csarun\f1 assumes that the filesystem is \f4/var\f1;
+if this is not the case, change symbol \f4ACCT_FS\f1 in
+\f4@sysconfdir@/csa.conf\f1 accordingly.
+To change the minimum number of free blocks
+on \f4ACCT_FS\f1 (the default is 2000),
+modify \f4MIN_BLKS\f1 in the configuration file.
+.PP
+To remove bad records in accounting data files encountered by
+\f4csarun\f1, use \f4csaedit\f1(8) and \f4csaverify\f1(8).
+.PP
+You need to make sure that \f4csarun\f1 can read the site-generated user exit
+scripts.
+If \f4csarun\f1 cannot read the scripts,
+it does not handle the error graciously like it does for other errors.
+This means the error will not be
+logged in the SYSLOG file and the active file,
+and no notification email will
+be sent out.
+.SH BUGS
+If possible, do not restart \f4csarun\f1 in the SETUP state.
+Instead, run SETUP manually and restart \f4csarun\f1 by using the
+following command line:
+.RS .5i
+.PP
+\f4csarun \f2MMDD hhmm\f1 VERIFY\f1
+.RE
+.PP
+If \f4csarun\f1 terminates abnormally
+and leaves the lock files in place,
+the next execution of \f4csarun\f1 will remove these locks,
+but it also will terminate abnormally.
+.SH EXAMPLES
+Example 1:
+The following example starts \f4csarun\f1 in default form:
+.RS .5i
+.PP
+\f4nohup\ csarun\ 2>\ @csalocalstatedir@/nite/csarun.log\ &\f1
+.RE
+.PP
+Example 2:
+The following example starts \f4csarun\f1 to work on both terminated
+and active jobs.
+.RS .5i
+.PP
+\f4nohup\ csarun\ -A\ 2>>\ @csalocalstatedir@/nite/csarun.log\ &\f1
+.RE
+.PP
+Example 3:
+The following example restarts \f4csarun\f1 on February 18
+at the state saved in \f4statefile\f1:
+.RS .5i
+.PP
+\f4nohup\ csarun\ 0218\ 2>>\ @csalocalstatedir@/nite/csarun.log\ &\f1
+.RE
+.PP
+Example 4:
+The following example restarts \f4csarun\f1 at 10:00 PM on October 26
+at \f4BUILD\f1 state:
+.RS .5i
+.PP
+\f4nohup\ csarun\ 1026\ 2200\ BUILD\ 2>>\ @csalocalstatedir@/nite/csarun.log\ &\f1
+.RE
+.SH FILES
+.TP 35
+\f4@sysconfdir@/csa.conf\f1
+Accounting configuration file
+.TP
+\f4@csalocalstatedir@/day/*\f1
+Directory that contains current accounting files
+.TP
+\f4@csalocalstatedir@/nite/active\f1
+Record of accounting progress
+.TP
+\f4@csalocalstatedir@/nite/clastdate\f1
+Record of last date and time that accounting ran
+.TP
+\f4@csalocalstatedir@/nite/lock\f1
+Lock file that prevents simultaneous invocation
+.TP
+\f4@csalocalstatedir@/nite/lock1\f1
+Lock file that prevents simultaneous invocation
+.TP
+\f4@csalocalstatedir@/nite/statefile\f1
+Record of last state that \f4csarun\f1 was working on or completed
+.TP
+\f4@csalocalstatedir@/sum/*\f1
+Directory that contains daily condensed data files 
+and accounting reports
+.TP
+\f4@csalocalstatedir@/work/*\f1
+Directory that contains temporary files from daily accounting
+.TP
+\f4@sbindir@/csa.archive1\f1
+Site-generated user exit script 
+to be executed during the \f4ARCHIVE1\f1 state.
+.TP
+\f4@sbindir@/csa.archive2\f1
+Site-generated user exit script
+to be executed during the \f4ARCHIVE2\f1 state.
+.TP
+\f4@sbindir@/csa.fef\f1
+Site-generated user exit script
+to be executed during the \f4FEF\f1 state.
+.TP
+\f4@sbindir@/csa.user\f1
+Site-generated user exit script
+to be executed during the \f4USEREXIT\f1 state.
+.SH SEE ALSO
+cron(8),
+csaaddc(8),
+csabuild(8),
+csacms(8),
+csacon(8),
+csacrep(8),
+csadrep(8),
+csaedit(8),
+csajrep(8),
+csaperiod(8),
+csarecy(8),
+csaverify(8).

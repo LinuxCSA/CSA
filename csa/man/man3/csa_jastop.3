@@ -1,0 +1,96 @@
+.\"
+.\" (C) 2004-2007 Silicon Graphics, Inc.  All Rights Reserved.
+.\"
+.\" This documentation supports a
+.\" program that is free software; you can redistribute it and/or modify it
+.\" under the terms of version 2 of the GNU General Public License as
+.\" published by the Free Software Foundation.
+.\"
+.\" The documentation that supports
+.\" this program is distributed in the hope that it will be useful, but
+.\" WITHOUT ANY WARRANTY; without even the implied warranty of
+.\" MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+.\"
+.\" Further, this documentation and the software it
+.\" supports, are distributed without any warranty that it is
+.\" free of the rightful claim of any third person regarding infringement
+.\" or the like.  Any license provided herein, whether implied or
+.\" otherwise, applies only to this software file.  Patent licenses, if
+.\" any, provided herein do not apply to combinations of this program with
+.\" other software, or any other product whatsoever.
+.\"
+.\" You should have received a copy of the GNU General Public License along
+.\" with this program; if not, write the Free Software Foundation, Inc., 59
+.\" Temple Place - Suite 330, Boston MA 02111-1307, USA.
+.\"
+.\" Contact information:  Silicon Graphics, Inc., 1140 East Arques Avenue,
+.\" Sunnyvale, CA  94085, or:
+.\"
+.\" http://www.sgi.com
+.\"
+.\" For further information regarding this notice, see:
+.\"
+.\" http://oss.sgi.com/projects/GenInfo/NoticeExplan
+.\"
+.TH csa_jastop 3
+.SH NAME
+csa_jastop \- stop job accounting
+.SH LIBRARY
+Linux CSA Application Interface library (libcsa_api, -lcsa_api).
+.SH SYNOPSIS
+.nf
+\f3#include <csa_api.h>\f1
+.sp .8v
+\f3int csa_jastop( struct csa_job_req *job_req );\f1
+.fi
+.SH DESCRIPTION
+The \f4csa_jastop\f1 library call is part of the \f7csa_api\f1 library that allows
+processes to manipulate and obtain status about linux CSA accounting methods.
+When the \f7csa_api\f1 library is to be used, the
+\f3csa_api.h\f1 header file should be included to obtain the proper definitions.
+.PP
+\f4csa_jastop\f1 
+stops job accounting.
+.PP
+The caller should provide as a parameter a pointer to a variable of
+data structure type csa_job_req:
+.PP 
+.RS .3i
+.EX
+/*
+ * CSA_JASTART/CSA_JASTOP request
+ */
+.sp 0
+struct csa_job_req {
+    char    job_path[ACCT_PATH+1];
+.sp 0
+};
+.EE
+.RE
+.PP
+.SH RETURN VALUE
+Upon successful completion, \f4csa_jastop\f1 returns 0.
+Otherwise, a value of -1 is returned and \f3errno\f1 is set to
+indicate the error.
+.SH ERRORS
+Under the following conditions, the \f4csa_jastop\fP function
+fails and sets \f2errno\fP to:
+.TP 15
+[EACCESS]
+Search permission is denied on a component of the path prefix.
+.TP 15
+[EFAULT]
+The \f2job_req\f1 argument points to an illegal address.
+.TP 15
+[EINVAL]
+An invalid argument was specified.
+.TP 15
+[EPERM]
+The process does not have appropriate capability
+to use this system call.
+.TP 15
+[ENOENT]
+No job table entry is found when attempting to start or stop user job accounting.
+.SH SEE ALSO
+csa_start(3), csa_stop(3), csa_halt(3), csa_check(3), csa_kdstat(3), csa_rcdstat(3), csa_jastart(3), csa_wracct(3), csa_auth(3)
+

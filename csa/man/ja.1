@@ -1,0 +1,721 @@
+.\"
+.\" (C) 2000-2007 Silicon Graphics, Inc.  All Rights Reserved.
+.\"
+.\" This documentation supports a
+.\" program that is free software; you can redistribute it and/or modify it
+.\" under the terms of version 2 of the GNU General Public License as
+.\" published by the Free Software Foundation.
+.\"
+.\" The documentation that supports
+.\" this program is distributed in the hope that it will be useful, but
+.\" WITHOUT ANY WARRANTY; without even the implied warranty of
+.\" MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+.\"
+.\" Further, this documentation and the software it
+.\" supports, are distributed without any warranty that it is
+.\" free of the rightful claim of any third person regarding infringement
+.\" or the like.  Any license provided herein, whether implied or
+.\" otherwise, applies only to this software file.  Patent licenses, if
+.\" any, provided herein do not apply to combinations of this program with
+.\" other software, or any other product whatsoever.
+.\"
+.\" You should have received a copy of the GNU General Public License along
+.\" with this program; if not, write the Free Software Foundation, Inc., 59
+.\" Temple Place - Suite 330, Boston MA 02111-1307, USA.
+.\"
+.\" Contact information:  Silicon Graphics, Inc., 1140 East Arques Avenue,
+.\" Sunnyvale, CA  94085, or:
+.\"
+.\" http://www.sgi.com
+.\"
+.\" For further information regarding this notice, see:
+.\"
+.\" http://oss.sgi.com/projects/GenInfo/NoticeExplan
+.\"
+.TH ja 1
+.SH NAME
+ja \- starts and stops user job accounting information 
+.SH SYNOPSIS
+\f4ja\f1
+[\f4-a\f1 \f2ash\f1]
+[\f4-c\f1]
+[\f4-d\f1]
+[\f4-D\f1 \f2level\f1]
+[\f4-e\f1]
+[\f4-f\f1]
+[\f4-g\f1 \f2gid\f1]
+[\f4-h\f1]
+[\f4-j\f1 \f2jid\f1]
+[\f4-J\f1]
+[\f4-l\f1]
+[\f4-m\f1]
+[\f4-M\f1 \f2marks\f1]
+[\f4-n\f1 \f2names\f1]
+[\f4-o\f1]
+[\f4-p\f1 \f2projid\f1]
+[\f4-r\f1]
+[\f4-s\f1]
+[\f4-t\f1]
+[\f4-u\f1 \f2uid\f1]
+[\f2file\f1]
+.SH DESCRIPTION
+The \f4ja\f1 command provides job-related accounting
+information.
+This information is taken from the job accounting file
+to which the CSA daemon writes,
+provided that job accounting is enabled.
+The job accounting file can be either the \f2file\f1 you provide
+or the default, described in the following.
+\f4ja\f1 provides information only about terminated processes.
+The login shell
+and the current \f4ja\f1 command being executed
+are active processes and are not reported by \f4ja\f1.
+See \f4ps\f1(1) for information about active processes.
+.PP
+To enable job accounting, use the \f4ja\f1 command.
+You may specify only the mark option (\f4-m\f1)
+and the optional \f2file\f1 name when enabling.
+If the job accounting file does not exist,
+\f4ja\f1 creates it.
+If the file does exist,
+accounting information is appended to the existing file.
+If job accounting is already enabled
+and the optional filename specified is a file
+other than the currently active job accounting file,
+the newly specified file becomes the job accounting file.
+.PP
+If you do not specify the optional filename, the \f4ACCT_TMPDIR\f1
+environment variable must be set to a directory.
+If that variable is not set, the directory is assigned using the
+\f4TMPDIR\f1 environment variable, or defaults to \f4/tmp\f1.
+A default name of the following form is then used:
+.sp .8v
+.nf
+.RS .5i
+.ft 4
+$ACCT_TMPDIR/.jacct<\f2jid\f1>
+.sp .8v
+.fi
+.RE
+The \f4ACCT_TMPDIR\f1 environment variable is not exported
+in \f4at\f1(1) or \f4crontab\f1(1) jobs.
+You must specify the job accounting filename
+in the \f4at\f1(1) or \f4crontab\f1(1) commands;
+otherwise, \f4ja\f1 will abort.
+.sp .8v
+On normal termination of job accounting (\f4-t\f1 specified),
+\f4ja\f1 removes the default job accounting file and disables job accounting.
+If you specify the optional filename when enabling,
+specify the same name when terminating.
+The optional job accounting file is not deleted by the \f4ja\f1 command.
+.sp .8v
+The \f4ja\f1 command lets you mark the positions of
+various commands (processes)
+by writing the position of the next accounting record
+to be processed to standard output.
+You can use these marks when generating reports
+to restrict the information reported.
+.sp .8v
+There are four groups of options you can use with the
+\f4ja\f1 command:
+.br
+.RS 5
+Report selection options
+.RE
+.RS 7
+\f4-c\f1,
+\f4-f\f1,
+\f4-o\f1,
+\f4-s\f1
+.RE
+.br
+.RS 5
+Record selection options
+.RE
+.RS 7
+\f4-a\f1 \f2ash\f1 (deferred),
+\f4-g\f1 \f2gid\f1,
+\f4-j\f1 \f2jid\f1,
+\f4-M\f1 \f2marks\f1,
+\f4-n\f1 \f2names\f1,
+\f4-p\f1 \f2projid\f1 (deferred), and
+\f4-u\f1 \f2uid\f1
+.RE
+.br
+.RS 5
+Report modifier options
+.RE
+.RS 7
+\f4-d\f1,
+\f4-e\f1,
+\f4-h\f1,
+\f4-J\f1,
+\f4-l\f1
+.RE
+.br
+.RS 5
+Special options (debug, mark, raw, and disable)
+.RE
+.RS 7
+\f4-D\f1,
+\f4-m\f1,
+\f4-r\f1, and
+\f4-t\f1
+.RE
+.PP
+.SS Report Selection Options
+The \f4ja\f1 command can produce different types of reports by using
+the \f4-c\f1, \f4-f\f1, \f4-o\f1, and \f4-s\f1 options.
+The report-selection options are first summarized
+and then described in detail.
+.PP
+In summary, the report selection options are as follows:
+.TP
+\f4-c\f1
+Produces the command report
+(\f4-c\f1 and \f4-o\f1 are mutually exclusive).
+.TP
+\f4-f\f1
+Produces the command flow report.
+.TP
+\f4-o\f1
+Produces the other (alternative) command report
+(\f4-o\f1 and \f4-c\f1 are mutually exclusive).
+.TP
+\f4-s\f1
+Produces the summary report.
+.PP
+Described in detail, the report selection options are as follows:
+.TP
+\f4-c\f1
+Produces a command report.
+The following fields are reported
+when you specify the \f4-c\f1 option
+with the \f4-l\f1 option
+or with the \f4-l\f1 and \f4-h\f1 options.
+These fields provide statistics about individual processes.
+.RS 7
+.TP 25
+\f4Command Name\f1
+First 15 characters of the name of the command that was
+executed.
+.TP
+\f4Started At\f1
+Start time of the process.
+.TP
+\f4Elapsed Seconds\f1
+Elapsed time of the process.
+.TP
+\f4User CPU Seconds\f1
+Amount of CPU time the process consumed
+while it was executing in user mode.
+.TP
+\f4Sys CPU Seconds\f1
+Amount of CPU time the process consumed
+while it was executing in system mode.
+.TP
+\f4CPU Delay Secs\f1
+Amount of time the process waits for a CPU, while runnable.
+.TP
+\f4Block I/O Delay Secs\f1
+Amount of time the process waits for synchronous block I/O to complete.
+.TP
+\f4Swap In Delay Secs\f1
+Amount of time the process waits for page fault I/O (swap in only).
+.TP
+\f4CPU MEM Avg Mbytes\f1
+(\f4-l\f1) Average amount of memory that this process used.
+This value is calculated by dividing the memory integral
+by the total CPU time
+(\f2system\f1 + \f2user CPU time\f1).
+For more information on memory integrals, see
+the \f2Comprehensive System Accounting for Linux\f1 manual.
+.TP
+\f4Characters Read\f1
+(\f4-l\f1) Number of characters in Mbytes read
+by the \f4read\f1, \f4readv\f1, and \f4\f1 system calls
+(see \f4read\f1(2), \f4readv\f1(2), and \f4pread\f1(2)).
+.TP
+\f4Characters Written\f1
+(\f4-l\f1) Number of characters in Mbytes written
+by the \f4write\f1,  \f4writev\f1, and \f4pwrite\f1 system calls
+(see \f4write\f1(2), \f4writev\f1(2),
+and \f4pwrite\f1(2)).
+.TP
+\f4Logical I/O Read\f1
+(\f4-l\f1) Number of logical I/O read requests that the process performed.
+A logical I/O request is performed
+each time a process calls a \f4read\f1, \f4readv\f1, or \f4pread\f1 system call.
+.TP
+\f4Logical I/O Write\f1
+(\f4-l\f1) Number of logical I/O write requests that the process performed.
+A logical I/O write request is performed
+each time a process calls a \f4write\f1,
+or \f4writev\f1, or \f4pwrite\f1 system call.
+.TP
+\f4CoreMem HiValue\f1
+(\f4-h\f1) (\f4-l\f1) Maximum amount of core memory the process used at any one time.
+The value is reported in Kbytes.
+.TP
+\f4VirtMem HiValue\f1
+(\f4-h\f1) (\f4-l\f1) Maximum amount of virtual memory the process used at any one time.
+The value is reported in Kbytes.
+.TP
+\f4Ex St\f1
+(\f4-l\f1) Lower 8 bits from the exit status of the process.
+See \f4wait\f1(2) for more information.
+.TP
+\f4Ni\f1
+(\f4-l\f1) The last nice value of the process.
+.TP
+\f4Fl\f1
+(\f4-l\f1) Accounting flag.
+The following values are available:
+.RE
+.RS 32
+.TP 7
+\f4F\f1
+The process forked but did not execute.
+.TP
+\f4S\f1
+The process used superuser privileges.
+.PP
+The accounting flags are defined in
+\f4/usr/include/csa.h\f1.
+.RE
+.RS 7
+.TP 25
+\f4SBUs\f1
+System billing unit (SBU) for the process.
+The system administrator configures SBU calculations.
+For more information, see the \f2Comprehensive System Accounting for Linux\f1 manual.
+.RE
+.TP 7
+\f4-f\f1
+Produces a command flow report.
+This report provides information on the
+parent/child relationships of processes and,
+if you specify the \f4-l\f1 option,
+CPU user and system time (in seconds).
+.TP
+\f4-o\f1
+Produces an alternative (other) command report.
+The \f4-o\f1 option report contains the following fields,
+which show statistics about individual processes.
+.RS 7
+.TP 26
+\f4Command Name\f1
+First 15 characters of the name of the command
+that was executed.
+.TP
+\f4Started At\f1
+Start time of the process.
+.TP
+\f4Elapsed Seconds\f1
+Elapsed time of the process.
+.TP
+\f4Proc ID\f1
+Process ID of the current process.
+.TP
+\f4Parent ProcID\f1
+Process ID of the parent process.
+.TP
+\f4CoreMem HiWater\f1
+Maximum amount of core memory the process used
+at any one time.
+The value is reported in Kbytes.
+.TP
+\f4VirtMem HiWater\f1
+Maximum amount of virtual memory the process used
+at any one time.
+The value is reported in Kbytes.
+.TP
+\f4CPU Delay Count\f1
+Number of CPU delay values
+recorded for the process.
+.TP
+\f4Block I/O Delay Count\f1
+Number of synchronous block I/O delay values
+recorded for the process.
+.TP
+\f4Swap In Delay Count\f1
+Number of page fault I/O (swap in) delay values
+recorded for the process.
+.TP
+\f4Real Run Time Secs\f1
+CPU "wall-clock" running time.
+On some architectures, the value is adjusted for CPU time stolen
+from the kernel in involuntary waits due to virtualization.
+.TP
+\f4Virt Run Time Secs\f1
+Time intervals seen by the kernel.
+No adjustment for involuntary waits due to virtualization.
+.RE
+.TP 7
+\f4-s\f1
+Produces a summary report.
+The \f4-s\f1 option report contains the following fields,
+which provide accumulated usage statistics for the reporting period.
+.RS 7
+.TP 30
+\f4Job Accounting Filename\f1
+Name of the file to which the kernel
+writes the \f4ja\f1 accounting records.
+.TP
+\f4Operating System\f1
+Operating system name, node name, release, version, and hardware type.
+.TP
+\f4User Name (ID)\f1
+Name and user ID of the real user.
+.TP
+\f4Group Name (ID)\f1
+Name and group ID of the real group.
+.TP
+\f4Project Name (ID)\f1
+Project name and project number that this process uses (deferred).
+Multiple project ID usage is listed, but not individual projects.
+.TP
+\f4Job ID\f1
+Job ID associated with these processes.
+.TP
+\f4Report Starts\f1
+Starting time of the process
+that began first during the reporting period.
+.TP
+\f4Report Ends\f1
+Ending time of the process that was the last to complete
+during the reporting period.
+.TP
+\f4Elapsed Time\f1
+Duration of the reporting period in seconds
+(the difference between the report ending and starting times).
+.TP 30
+\f4User CPU Time\f1
+Total CPU time (in seconds) used during the reporting period
+while the processes were in user mode.
+.TP
+\f4System CPU Time\f1
+Total CPU time (in seconds) used
+during the reporting period
+while the processes were in system mode.
+.TP
+\f4CPU Time Core Memory Integral (Mbyte-seconds)\f1
+Sum of the core memory integrals for all processes.
+For more information on memory integrals, see the \f2Comprehensive System Accounting for Linux\f1 manual.
+.TP
+\f4CPU Time Virtual Memory Integral (Mbyte-seconds)\f1
+Sum of the virtual memory integrals for all processes.
+.TP
+\f4Maximum Core Memory Used (Mbytes)\f1
+Maximum amount of core memory used by any process at one time.
+.TP
+\f4Maximum Virtual Memory Used (Mbytes)\f1
+Maximum amount of virtual memory used by any process at one time.
+.TP
+\f4Characters Read\f1
+Total number of characters read by the \f4read\f1(2), \f4readv\f1(2),
+and \f4pread\f1(2) system calls
+by all processes in the reporting period.
+.TP
+\f4Characters Written\f1
+Total number of characters written by the \f4write\f1(2),
+\f4writev\f1(2), and \f4pwrite\f1(2) system calls
+by all processes in the reporting period.
+.TP
+\f4Logical I/O Read Requests\f1
+Total number of \f4read\f1(2), \f4readv\f1(2), and \f4pread\f1.
+system calls executed by all processes in the reporting period.
+.TP
+\f4Logical I/O Write Requests\f1
+Total number of \f4write\f1(2) and \f4writev\f1(2) system calls executed by
+all processes in the reporting period.
+.TP
+\f4CPU Delay\f1
+Total CPU delay (in seconds),
+summed over all processes in the reporting period.
+.TP
+\f4Block I/O Delay\f1
+Total synchronous block I/O delay (in seconds),
+summed over all processes in the reporting period.
+.TP
+\f4Swap In Delay\f1
+Total page fault I/O (swap in) delay (in seconds),
+summed over all processes in the reporting period.
+.TP
+\f4Number of Commands\f1
+Total number of commands that completed during the reporting period.
+.TP
+\f4System Billing Units\f1
+Sum of the system billing units (SBUs) of all processes.
+.RE
+.PP
+.SS Mark and Disable Options
+The mark and disable options are as follows:
+.TP 7
+\f4-m\f1
+Writes the position of the next accounting record to standard output.
+This can be used to mark various positions within the job accounting
+file for later use with the \f4-M\f1 option.
+The position marked is the byte offset of the current
+end-of-information of the job accounting file.
+(\f4-m\f1 cannot be used with the report selection and
+modifier options nor with the \f4-t\f1 disable option.)
+.TP
+\f4-t\f1
+Disables (terminates) job accounting.
+(\f4-m\f1 and \f4-t\f1 are mutually exclusive).
+.SS Record Selection Options
+.TP 10
+\f4-a\f1 \f2ash\f1
+Report is for this array session handle (\f2ash\f1) only. (deferred)
+.TP
+\f4-g\f1 \f2gid\f1
+Report is for this group identifier (\f2gid\f1) or
+group name only.
+.TP
+\f4-j\f1 \f2jid\f1
+Report is for this job identifier (\f2jid\f1) only.
+.TP
+\f4-u\f1 \f2uid\f1
+Report is for this user identifier (\f2uid\f1) or user name only.
+.TP
+\f4-n\f1 \f2names\f1
+Shows only commands matching names patterns
+that may be regular expressions, as in \f4ed\f1(1),
+except that a + symbol indicates one or more occurrences.
+.TP
+\f4-p\f1 \f2projid\f1
+Report is for this project identifier (\f2projid\f1) or project name only. (deferred)
+.TP
+\f4-M\f1 \f2marks\f1
+Shows only commands within the marked range.
+This can be a list of ranges with each list item
+having the following form:
+.RS 10
+.TP 20
+\&\f4.\f1
+First command preceding current position
+.TP
+\f4m1\f1
+First command following mark
+.TP
+\f4m1:\f1
+All commands between the mark and EOF
+.TP
+\f4m1:m2\f1
+All commands between the two marks
+.TP
+\f4:m1\f1
+All commands between BOF and the mark
+.TP
+\f4:\f1
+All commands between BOF and EOF (default)
+.PP
+See the \f4-m\f1 option for information on how to obtain marks.
+.RE
+.SS Report Modifier Options
+Report modifier options must be used
+with at least one selection option.
+The report modifier options are as follows:
+.TP 7
+\f4-d\f1
+Reports on workload management usage.
+.TP 7
+\f4-e\f1
+Generates an extended summary report;
+you must use \f4-e\f1 with the \f4-s\f1 option.
+The following are descriptions of fields produced by specifying
+the \f4-e\f1 option with the \f4-s\f1 option.
+These fields provide additional
+accumulated statistics for the reporting period:
+.RS 7
+.TP 14
+\f4Number of Page Swaps\f1
+Number of times the pages were swapped out of memory.
+.TP
+\f4Number of Minor Page Faults\f1
+Number of minor page faults.
+.TP
+\f4Number of Manor Page Faults\f1
+Number of major page faults.
+.TP
+\f4Number of CPU Delays\f1
+Number of CPU delay values.
+.TP
+\f4Number of Block I/O Delays\f1
+Number of synchronous block I/O delay values.
+.TP
+\f4Number of Swap In Delays\f1
+Number of page fault I/O (swap in) delay values.
+.TP
+\f4CPU Real Run Time\f1
+Cumulative CPU "wall-clock" running time (in seconds).
+On some architectures, the value is adjusted for CPU time stolen
+from the kernel in involuntary waits due to virtualization.
+.TP
+\f4CPU Virtual Run Time\f1
+Cumulative time intervals seen by the kernel (in seconds).
+No adjustment for involuntary waits due to virtualization.
+.RE
+.TP 7
+\f4-h\f1
+Provides the largest amount of core and virtual memory the
+process used at one time in 1K units.
+Used only with both the \f4-c\f1 and \f4-l\f1
+options.
+.TP
+\f4-J\f1
+Provides job ID and start/end times.
+.TP
+\f4-l\f1
+Provides additional information when used with
+the \f4-c\f1 or \f4-f\f1 options.
+.TP 7
+\f4-r\f1
+Raw mode, no headers are printed.
+.TP
+\f4-D\f1
+Enables debugging for the \f4ja\f1 command.
+Valid values are 1 through 4.
+Debugging is off by default.
+A debug level greater than one provides program flow information.
+A debug level greater than three provides additional information 
+about records which are skipped over due
+to the requested \f4ja\f1 record selection options.
+.SH EXAMPLES
+Examples 1 and 2 show the usage of the \f4-m\f1 and
+\f4-M\f1 options with standard shell and Korn shell variables.
+.PP
+Example 1:
+.PP
+.nf
+.RS .5i
+.ft 4
+ja                #enable job accounting
+     \&.
+     \&.  (\f2Miscellaneous commands\fP)
+     \&.
+m1=`ja -m`        #mark job accounting file's current position
+     \&.
+     \&.  (\f2Commands of special interest\fP)
+     \&.
+m2=`ja -m`        #mark job accounting file's current position
+     \&.
+     \&.  (\f2Miscellaneous commands\fP)
+     \&.
+ja -cM $m1:$m2   #print command report from mark m1 to mark m2
+ja -st           #print summary report for entire session and disable
+                  job accounting
+.ft 1
+.RE
+.fi
+.PP
+Example 2:
+.PP
+.nf
+.RS .5i
+.ft 4
+ja            #enable job accounting
+     \&.
+     \&.  (\f2Miscellaneous commands\fP)
+     \&.
+m1=`ja -m`    #mark job accounting file's current position
+     \&.
+     \&.  (\f2Commands of special interest\fP)
+     \&.
+ja -cM $m1:   #print command report from mark to EOF
+     \&.
+     \&.  (\f2Miscellaneous commands\fP)
+     \&.
+ja -st        #print summary report for entire session and disable
+               job accounting
+.ft 1
+.RE
+.fi
+.PP
+Example 3:
+.PP
+This example shows example output when you use the \f4-c\f1 option.
+.PP
+.nf
+.ft 7
+.sp .8v
+\s-1
+Job Accounting - Command Report
+===============================
+.sp .8v
+
+    Command       Started    Elapsed    User CPU    Sys CPU       CPU      Block I/O    Swap In  
+     Name           At       Seconds    Seconds     Seconds    Delay Secs  Delay Secs  Delay Secs   SBU's 
+===============  ========  ==========  ==========  ==========  ==========  ==========  ==========  =======
+# CFG   ON(    1) (    6)  10:57:53 11/28/2000  System:  Linux porsche07 2.4.0-test7.csa.1
+#9 SMP Sun Nov 12 10:17:23 CST 2000 i686
+ja               10:57:53        0.33       0.26       0.01          0.00        0.00        0.00     0.00
+who              10:58:19        0.02       0.00       0.01          0.00        0.00        0.00     0.00
+ja               10:58:32        0.26       0.25       0.00          0.00        0.00        0.00     0.00
+csacom           10:58:51        0.01       0.01       0.00          0.00        0.00        0.00     0.00
+ls               11:23:27        0.02       0.01       0.00          0.00        0.00        0.00     0.00
+ls               11:24:40        0.01       0.01       0.00          0.00        0.00        0.00     0.00
+ls               11:24:44        0.01       0.00       0.01          0.00        0.00        0.00     0.00
+vi               11:24:50      151.95       0.00       0.02          0.00        0.00        0.00     0.00
+\s+1
+.ft 1
+.fi
+.PP
+The \f4# CFG ON\f1 output line is a configuration record written 
+when job accounting was enabled via the \f4ja\f1 command.
+This record contains the daemon accounting types enabled,
+record accounting types enabled, last system boot-time, and
+system identification information.
+.PP
+Example 4:
+.PP
+The following example shows the output of the \f4-s\f1 option:
+.PP
+.nf
+.ft 7
+.sp .8v
+Job CSA Accounting - Summary Report
+====================================
+.sp .8v
+Job Accounting File Name         : /tmp/username.ja
+Operating System                 : Linux porsche07 2.4.0-test7.csa.1 #9 SMP Sun 
+Nov 12 10:17:23 CST 2000 i686
+User Name (ID)                   : username (10320)
+Group Name (ID)                  : resmgmt (16061)
+Project Name (ID)                : ? (0)
+Job ID                           : 0xa0700000041fe
+Report Starts                    : 12/13/00 10:19:50
+Report Ends                      : 12/13/00 10:19:55
+Elapsed Time                     :            5      Seconds
+User CPU Time                    :            0.2900 Seconds
+System CPU Time                  :            0.0350 Seconds
+CPU Time Core Memory Integral    :            0.0055 Mbyte-seconds
+CPU Time Virtual Memory Integral :            0.0139 Mbyte-seconds
+Maximum Core Memory Used         :            1.1602 Mbytes
+Maximum Virtual Memory Used      :            2.0898 Mbytes
+Characters Read                  :            0.1482 Mbytes
+Characters Written               :            0.0010 Mbytes
+Logical I/O Read Requests        :           61
+Logical I/O Write Requests       :           16
+CPU Delay                        :            0.0160 Seconds
+Block I/O Delay                  :            0.0385 Seconds
+Swap In Delay                    :            0.0000 Seconds
+Number of Commands               :            5
+System Billing Units             :            0.0000
+.ft 1
+.fi
+.PP
+.SH SEE ALSO
+at(1),
+crontab(1),
+csa(8),
+csacom(1),
+sh(1),
+pread(2),
+pwrite(2),
+read(2),
+readv(2),
+wait(2),
+write(2),
+writev(2),

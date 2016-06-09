@@ -1,0 +1,28 @@
+See the INSTALL file in this directory for build and installation
+information for this package.
+
+This package contains the CSA commands and man pages.  There is
+also a dependency upon the Linux job daemon.  The job package can
+be downloaded from http://oss.sgi.com/projects/job.
+
+Linux Comprehensive System Accounting (CSA) is a combination
+of a daemon program and a set of C programs and shell scripts.
+CSA provides methods for collecting per-process resource usage data,
+monitoring disk usage, and charging fees to specific login accounts.
+CSA takes this per-process accounting information and combines it
+by job identifier (jid) within system boot uptime periods.
+
+CSA provides the following features which are not available
+with other Linux accounting packages:
+
+1)  Per-job accounting
+2)  Daemon accounting
+3)  User job accounting (ja command)
+4)  Flexible accounting periods (not just daily and monthly periods)
+5)  Flexible system billing units (SBUs)
+6)  Offline archiving of accounting data
+7)  User exits for site specific customization of reports
+8)  Configurable parameters
+
+For more information and details on how to contribute to the CSA
+project, see the web pages at http://oss.sgi.com/projects/csa.

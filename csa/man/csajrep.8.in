@@ -1,0 +1,228 @@
+.\"
+.\" (C) 2000-2007 Silicon Graphics, Inc.  All Rights Reserved.
+.\"
+.\" This documentation supports a
+.\" program that is free software; you can redistribute it and/or modify it
+.\" under the terms of version 2 of the GNU General Public License as
+.\" published by the Free Software Foundation.
+.\"
+.\" The documentation that supports
+.\" this program is distributed in the hope that it will be useful, but
+.\" WITHOUT ANY WARRANTY; without even the implied warranty of
+.\" MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+.\"
+.\" Further, this documentation and the software it
+.\" supports, are distributed without any warranty that it is
+.\" free of the rightful claim of any third person regarding infringement
+.\" or the like.  Any license provided herein, whether implied or
+.\" otherwise, applies only to this software file.  Patent licenses, if
+.\" any, provided herein do not apply to combinations of this program with
+.\" other software, or any other product whatsoever.
+.\"
+.\" You should have received a copy of the GNU General Public License along
+.\" with this program; if not, write the Free Software Foundation, Inc., 59
+.\" Temple Place - Suite 330, Boston MA 02111-1307, USA.
+.\"
+.\" Contact information:  Silicon Graphics, Inc., 1140 East Arques Avenue,
+.\" Sunnyvale, CA  94085, or:
+.\"
+.\" http://www.sgi.com
+.\"
+.\" For further information regarding this notice, see:
+.\"
+.\" http://oss.sgi.com/projects/GenInfo/NoticeExplan
+.\"
+.TH csajrep 8
+.SH NAME
+csajrep \- prints a job report from the \f2sorted pacct\f1 file
+.SH SYNOPSIS
+.nf
+\f4@sbindir@/csajrep\f1 [\f4-s\f1\ \f2file\f1] [\f4-b\f1] [\f4-c\f1] \c
+[\f4-h\f1] [\f4-q\f1] [\f4-t\f1] [\f4-w\f1] [\f4-x\f1] [\f4-A\f1] [\f4-B\f1] \c
+[\f4-F\f1] [\f4-J\f1] [\f4-L\f1] [\f4-S\f1\f1] [\f4-T\f1] [\f4-Z\f1]
+.sp .8v
+\f4@sbindir@/csajrep\f1 [\f4-s\f1\ \f2file\f1] [\f4-j\f1\ \f2jid\f1] \c
+[\f4-p\f1\ \f2prid\f1] [\f4-r\f1\ \f2reqid\f1] [\f4-u\f1\ \f2uid\f1] \c
+[\f4-b\f1] [\f4-c\f1] [\f4-e\f1] \c
+[\f4-h\f1] [\f4-q\f1] \c
+[\f4-t\f1] [\f4-w\f1] [\f4-x\f1] \c
+[\f4-A\f1] [\f4-B\f1] \c 
+[\f4-J\f1] [\f4-L\f1] [\f4-S\f1] \c
+[\f4-T\f1] [\f4-V\f1] [\f4-Z\f1]
+.sp .8v
+\f4@sbindir@/csajrep\f1 [\f4-s\f1\ \f2file\f1] [\f4-A\f1]
+.fi
+.SH DESCRIPTION
+The \f4csajrep\f1 command reports job accounting information from
+the sorted pacct file, which is created by the \f4csabuild\f1(8) command.
+.PP
+The \f4csajrep\f1 command accepts the following three types of options:
+input, selection, and printing.
+If you omit the options, input is read from \f4@csalocalstatedir@/work/spacct\f1
+and all records from each completed job are reported.
+You can select a subset of jobs by specifying the user ID,
+project ID (deferred), job ID, or workload management request ID,
+for which you seek accounting information.
+.SS Input Options
+The following option specifies an input file
+for the job accounting report:
+.TP 10
+\f4-s\f1\ \f2file\f1
+Specifies the name of the sorted pacct file created by \f4csabuild\f1(8).
+The default file is \f4@csalocalstatedir@/work/spacct\f1.
+.SS Selection Options
+By default, the \f4-j\f1, \f4-p\f1,
+and \f4-u\f1 selection options report entire jobs.
+The \f4-e\f1 option limits the report to
+records that match the selection criteria.
+The \f4-e\f1 option must be used with
+at least one of the following options: \f4-j\f1, \f4-p\f1, or \f4-u\f1.
+You cannot specify the \f4-F\f1 option
+in combination with any of the following options: \f4-j\f1, \f4-p\f1, or \f4-u\f1.
+.PP
+Otherwise, the \f4csajrep\f1 command
+accepts the following selection options:
+.TP 10
+\f4-e\f1
+Selects only the records that meet the selection criteria as defined
+by the \f4-j\f1, \f4-p\f1, and \f4-u\f1 options.
+The \f4-e\f1 option must be used
+with at least one of these four options.
+By default, \f4csajrep\f1 outputs all of the
+records from jobs that contain at least one
+record that meets the selection criteria.
+.TP
+\f4-j\f1\ \f2jid\f1
+Specifies a (numeric) job ID.
+The job ID must be specified in hexadecimal.
+The "0x" prefix or "0X" prefix are optional.
+.TP 10
+\f4-p\f1\ \f2projid\f1
+Specifies a numeric project ID or project name. (deferred)
+.TP
+\f4-r\f1\ \f2reqid\f1 
+Specifies a workload management request ID.
+.TP
+\f4-u\f1\ \f2uid\f1
+Specifies a numeric user ID or a user login name.
+.TP
+\f4-F\f1
+By default, \f4-F\f1 displays all records for completed jobs.
+This option cannot be used with any of the following options:
+\f4-e\f1, \f4-j\f1, \f4-p\f1, and \f4-u\f1.
+When \f4-F\f1 is used with the \f4-A\f1 option,
+all records for both active and completed jobs are reported.
+When \f4-F\f1 is used with the \f4-Z\f1 option, all records
+are reported except those with a job ID (\f2jid\f1) of 0.
+.TP
+\f4-Z\f1
+Ignores records for which the job ID is equal to \f40\f1.
+.SS Printing Options
+The \f4csajrep\f1 command accepts the following printing options:
+.TP 10
+\f4-b\f1
+Reports system billing unit (SBU) usage.
+.TP
+\f4-c\f1
+Reports system and user CPU usage,
+along with CPU real and virtual run times.
+.TP
+\f4-h\f1
+Suppresses report headings.
+.TP
+\f4-q\f1
+For workload management records,
+reports the queue wait time and queue type.
+.TP
+\f4-t\f1
+Prints summary information.
+.TP
+\f4-w\f1
+Reports the CPU, block I/O, and swap in delays,
+along with high-water core memory usage value
+and high-water virtual memory usage value.
+.TP
+\f4-x\f1
+Reports the number of k-characters read and written,
+and the number of read and write system calls.
+The read and written values are printed separately.
+.TP
+\f4-A\f1
+Reports both active and completed jobs.
+By default, only completed jobs are reported.
+.TP
+\f4-B\f1
+Reports process and job starting times.
+.TP
+\f4-J\f1
+Reports job ID.
+.TP
+\f4-L\f1
+Puts form feeds at the end of each job.
+.TP
+\f4-S\f1
+Reports the array session handle. (deferred)
+.TP
+\f4-T\f1
+Prints only summary information for each job.
+.TP
+\f4-V\f1
+Reports page swaps, minor and major faults.
+.SH NOTES
+A job may contain multiple user IDs and project IDs (deferred),
+because the user may have executed a command such as
+\f4su\f1(1).
+.PP
+When the \f4-u\f1 option is used without the \f4-e\f1 option,
+all records for jobs containing at least one
+accounting record for the specified user are displayed.
+.PP
+For example, if user1 executes the command \f4rsh\ sgi\ who\f1
+from a remote host, then the command
+\f4@sbindir@/csajrep -u user1 -JBc -s spacct\f1 would produce
+output similar to:
+.PP
+.nf
+.ft 7
+.sp .8v
+JOB          PROJECT  LOGIN    COMMAND         START         USER-TIM SYS-TIM 
+ID           NAME     NAME     NAME            TIME          [SECS]   [SECS]  
+============= ======== ======== ======== ==================== ======== ========
+       0x146 Xydev    user1    who      Jan  7 13:28:02 2000    0.004    0.008
+       0x146 System   root     rshd     Jan  7 13:28:02 2000    0.004    0.014
+.ft 1
+.fi
+.PP
+The \f4rshd\f1(8) command was executed by root on behalf of user \f4user1\f1;
+thus it is reported by the \f4csajrep\ -u\f1 option.
+.PP
+When used with \f4-u\f1, the \f4-e\f1 option suppresses the
+printing of all accounting records which are not for the specified user.
+In the previous example, the command
+\f4@sbindir@/csajrep -eu user1 -JBc -s spacct\f1
+would produce output similar to:
+.PP
+.nf
+.ft 7
+.sp .8v
+JOB           PROJECT  LOGIN    COMMAND         START         USER-TIM SYS-TIM 
+ID            NAME     NAME     NAME            TIME          [SECS]   [SECS]  
+============= ======== ======== ======== ==================== ======== ========
+        0x146 Xydev    user1    who      Jan  7 13:28:02 2000    0.004    0.008
+.ft 1
+.fi
+.PP
+.SH EXAMPLES
+Example 1:
+The following example generates a list of commands
+by job that user \f4jdoe\f1 executed.
+The list includes job ID, start time, and both terminated
+and nonterminated jobs in the output:
+.RS .5i
+.PP
+\f4csajrep -u jdoe -ABJ\f1
+.RE
+.PP
+.SH SEE ALSO
+csabuild(8),
+csarun(8).

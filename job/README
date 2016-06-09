@@ -1,0 +1,211 @@
+==========
+Linux Jobs
+==========                 
+
+The following packages and tarballs are required to set up a system to use
+Linux jobs.
+
+
+RPM INSTALLATION
+================
+
+1. To install the PAM module, user commands, manual pages, and job package
+   documents:
+
+	rpm -i job-*.*.*-*.*.rpm
+
+2. To install the source code RPM that contains a copy of the source for the
+   PAM module, user commands, manual pages, and package documents (x86_64 and
+   ia64 systems):
+
+	rpm -i job-*.*.*-*.src.rpm
+
+   NOTE: the x86_64 and ia64 packages are from the same source code.
+
+3. Proceed to the section labeled "SETUP".
+
+
+SOURCE INSTALLATION
+===================
+
+1. Unpack the source.
+
+	tar zxvf job-*.*.*-*.tar.gz
+
+2. Build the commands, libraries and PAM module.  Run './configure --help' for
+   information on what options to set to designate installation directories.
+
+	./configure [OPTION]...
+	make
+
+3. Install the commands, PAM module, man pages, and package documents (you must
+   have root privilege to install to perform the installation.)
+
+	make install
+
+4. Proceed to the section labeled "SETUP".
+
+
+SETUP
+=====
+
+1. Edit the PAM configuration files to enable job creation.  There are two ways
+   to do this.  One is by editing individual PAM configuration files.  The
+   other method is to edit a common session configuration file to enable job
+   creation for all PAM services.
+
+   On SuSE systems, the common session configuration file is:
+	/etc/pam.d/common-session
+
+   On Red Hat systems, it is:
+	/etc/pam.d/system-auth
+
+   Common session method:
+   ----------------------
+   Simply add a line like this to /etc/pam.d/common-session (or
+   /etc/pam.d/system-auth):
+
+	session  optional  pam_job.so
+
+   Individual PAM configuration file method:
+   -----------------------------------------
+   cd /etc/pam.d	(directory where PAM config files reside)
+   su root		(if not already root)
+   vi login		(to enable job creation for logins)
+
+   While editing the login configuration file, the following line would be
+   added:
+
+	session  optional  pam_job.so
+
+   It is suggested that the creation of jobs via PAM be listed as an optional
+   operation until such time as you feel comfortable with their operation.
+   Then you can change 'optional' to 'required'.
+
+   This example shows the 'login' configuration file being changed.  You will
+   need to add the session line to all of the PAM entry points that you want to
+   have create jobs.  For example: gdm, kde, login, rlogin, rsh, su, and xdm
+   are currently set on my system.
+
+   Not all services use session management.  As a result, the PAM job module
+   also has the capability to create jobs at the account management module
+   level.  Whenever possible, it is best to use session management.  However,
+   if a particular service, such as ftp, does not invoke session modules you
+   can use the account management feature.  When using the account management
+   feature, you should specify the pam_job.so module as the last acct entry.
+   Such an entry would appear as follows:
+
+	acct  optional  pam_job.so
+
+   The only service I have encountered that does not use session management
+   modules is ftp.
+
+   What are the differences between using the session entry point and the
+   account management entry point?  When using the session entry point, the
+   creation of the job is optionally recorded via syslog.  Also, when the
+   point-of-entry process (the one that caused the creation of the job) exits,
+   another notice is posted via syslog.  These syslog entries provide another
+   history mechanism for tracking the status of a job.  When using the account
+   management entry point, a message concerning the creation of the job is
+   reported via syslog.  However, no additional messages concerning exit
+   notification for the point-of-entry process are recorded.
+
+   To enable job creation/exit recording via syslog, add the keyword 'verbose'
+   following pam_job.so when editing the configuration files above.
+
+2. If you installed the RPM package, the chkconfig variable "job" was created
+   for you.  If you went through the SOURCE INSTALLATION, you must do this
+   manually.  The chkconfig variable determines if the job daemon is started
+   automatically when the system boots.
+
+   This operation must be done as root (SOURCE INSTALLATION ONLY):
+
+	chkconfig --add job
+
+3. Reboot the system.
+
+4. Now, when a user gains access to the system through a PAM entry point that
+   is configured, a new job should be created to contain all the processes for
+   that user.
+
+5. The job package user commands are installed in /usr/bin and the manual pages
+   are installed into /usr/share/man (by default).  Those directories must be
+   in your PATH and MANPATH to access the commands and manual pages.
+
+
+JOB LIBRARY 
+===========
+
+A job library is available should you wish to write software that interacts
+with jobs.  The library itself is /usr/lib/libjob.so and the path to the header
+file is: /usr/include/job.h
+
+The following man pages document the functions available in the library:
+
+job_create(3)     job_getjidcnt(3)   job_getprimepid(3)  job_waitjid(3)
+job_detachjid(3)  job_getjidlist(3)  job_getuid(3)       job_detachpid(3)  
+job_getpidcnt(3)  job_killjid(3)     job_getjid(3)       job_getpidlist(3)  
+job_sethid(3)
+
+
+FILES
+=====
+
+1. libraries/modules:
+
+   /lib/security/pam_job.so	-- PAM session module
+   /usr/lib/libjob.so		-- job library interface
+
+2. header files:
+
+   /usr/include/job.h		-- job library interface header file
+   /usr/include/job_csa.h	-- job/CSA interface header file
+
+3. command files:
+
+   /usr/sbin/jobd		-- job daemon
+   /etc/init.d/job		-- job daemon run script
+
+   /usr/bin/jkill		-- Signal job processes
+   /usr/bin/jstat		-- Get job status information
+   /usr/bin/jwait		-- Wait on job completion
+   /usr/bin/jxcsa		-- Start or stop CSA daemon
+   /usr/bin/jattach		-- Attach process to a job
+   /usr/bin/jdetach		-- Detach process(es) from a job
+   /usr/bin/jsethid		-- Set the hid segment for jid generation
+
+4. man pages:
+
+   /usr/share/man/man1/jkill.1
+   /usr/share/man/man1/jstat.1
+   /usr/share/man/man1/jwait.1
+   /usr/share/man/man1/jxcsa.1
+   /usr/share/man/man7/job.7
+   /usr/share/man/man8/jattach.8
+   /usr/share/man/man8/jdetach.8
+   /usr/share/man/man8/jsethid.8
+   /usr/share/man/man3/job_attachpid.3
+   /usr/share/man/man3/job_create.3
+   /usr/share/man/man3/job_detachjid.3
+   /usr/share/man/man3/job_detachpid.3
+   /usr/share/man/man3/job_getjid.3
+   /usr/share/man/man3/job_getjidcnt.3
+   /usr/share/man/man3/job_getjidlist.3
+   /usr/share/man/man3/job_getpidcnt.3
+   /usr/share/man/man3/job_getpidlist.3
+   /usr/share/man/man3/job_getprimepid.3
+   /usr/share/man/man3/job_getuid.3
+   /usr/share/man/man3/job_killjid.3
+   /usr/share/man/man3/job_sethid.3
+   /usr/share/man/man3/job_waitjid.3
+
+5. documentation:
+
+   /usr/share/doc/packages/job/AUTHORS
+   /usr/share/doc/packages/job/COPYING
+   /usr/share/doc/packages/job/NEWS
+   /usr/share/doc/packages/job/README
+
+
+THE END
+=======

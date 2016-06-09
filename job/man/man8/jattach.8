@@ -1,0 +1,29 @@
+.\"
+.\" Copyright (c) 2004-2007 Silicon Graphics, Inc.
+.\" All rights reserved.
+.\"
+.TH JATTACH 8 "4 October 2005" "Linux Utilities" "Linux User's Manual"
+.SH NAME
+jattach \- Attach a processes to a job
+.SH SYNOPSIS
+.BR "jdetach" " pid" " jid "
+.br
+.SH DESCRIPTION
+.B jattach
+allows a process which currently is not attached to any job to be attached
+to the specified job. This command is useful with the jdetach command for 
+those occasions where you want to move processes from one job to another job.
+.PP
+To successfully attach a process to a job, the user must be root or
+have the CAP_SYS_RESOURCE capability.
+.SH OPTIONS
+.TP
+.BR "pid"
+The identifier for the attaching process. 
+.TP
+.BR "jid"
+The identifier for the job to be attached.
+
+.SH "SEE ALSO"
+.BR job (7)
+.BR jdetach (8)

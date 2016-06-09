@@ -1,0 +1,70 @@
+#!/bin/sh
+#
+# Linux Job - inescapable job support
+#
+# description:  This is a daemon for organizing processes into "jobs". \
+#               A job is an inescapable container used to group related \
+#               processes. \
+#               See http://oss.sgi.com/projects/pagg/
+#
+# processname: jobd
+#
+### BEGIN INIT INFO
+# Provides: job
+# Required-Start: $local_fs $syslog $named
+# Required-Stop: $local_fs $syslog $named
+# Should-Start: 
+# Default-Start: 2 3 4 5
+# Default-Stop: 0 1 6
+# Description: Starts Linux Job
+### END INIT INFO
+
+# Source function library.
+. /etc/rc.d/init.d/functions
+
+JSETHID_BIN=@bindir@/jsethid
+JOBD_BIN=@sbindir@/jobd
+JOBD_DIR=/var/run/jobd
+
+# Sanity checks
+[ -x $JSETHID_BIN -a -x $JOBD_BIN ] || exit 0
+
+# See how we were called.
+case "$1" in
+  start)
+	if [ ! -d $JOBD_DIR ]; then
+		mkdir -p $JOBD_DIR;
+		chmod 0755 $JOBD_DIR;
+	fi
+
+	echo -n "Starting JOB daemon ";
+	$JOBD_BIN
+	RETVAL=$?
+	[ $RETVAL -eq 0 ] && success || failure
+	echo
+	if [ $RETVAL -ne 0 ]; then 
+		exit $RETVAL
+	fi
+	sleep 3
+	echo -n "Setting JOB Host ID ";
+	$JSETHID_BIN
+	RETVAL=$?
+	[ $RETVAL -eq 0 ] && success || failure
+	echo
+	exit $RETVAL
+	;;
+  stop)
+	echo -n "Stopping JOB daemon "
+	$JSETHID_BIN 0xffffffff 
+	RETVAL=$?
+	[ $RETVAL -eq 0 ] && success || failure
+	echo
+	exit $RETVAL
+	;;
+  *)
+	echo "Usage: $0 start|stop"
+	exit 1
+esac
+
+exit 0
+

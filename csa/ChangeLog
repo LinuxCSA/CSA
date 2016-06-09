@@ -1,0 +1,130 @@
+* Fri Oct 17 2008 Jonathan Lim <jlim@sgi.com>
+- csa-4.1.1
+- Various fixes to allow for SLES11 build
+
+* Fri Jul 25 2008 Jonathan Lim <jlim@sgi.com>
+- csa-4.1.0
+- Fixed memory leaks
+- Changed acctjob structure offset type from int to int64_t
+
+* Fri Apr 18 2008 Jonathan Lim <jlim@sgi.com>
+- csa-4.0.2
+- Updated to use new libnl API
+- Fixed process exit code assignment
+
+* Tue Mar 4 2008 Jonathan Lim <jlim@sgi.com>
+- csa-4.0.1
+- Cleaned up acctdusg
+- Added check to prevent SIGPIPE when communicating with daemon
+- Increased maximum PID allowed for larger systems
+
+* Wed Nov 7 2007 Jonathan Lim <jlim@sgi.com>
+- csa-4.0.0
+- Implement kernel functionality as a userspace daemon
+- Remove obsolete wait metrics and replace with taskstats delay accounting
+- Various bug fixes
+
+* Fri Apr 27 2007 Jay Lan <jlan@sgi.com>
+* Mon Apr 30 2007 Jonathan Lim <jlim@sgi.com>
+- csa-3.0.2
+- SBU's data was all zero in csa-3.0.0 and csa-3.0.1
+- Clarify csacom(1) man page on '-f' option
+- Obsolete csacom '-a' & '-q' option
+- Fix a problem of csadrep reading input from a binary file
+- Fixed csadrep(8) man page: replaced '-w' with '-n' and removed '-t'
+
+* Wed Jul 5 2006 Jay Lan <jlan@sgi.com>
+- csa-3.0.1
+- 'csacom -b' was broken in csa-3.0.0
+- 'csacom -b' drops the last record of a pacct file
+
+* Thu Feb 24 2006 Jay Lan <jlan@sgi.com>
+- csa-3.0.0
+- csacom -[esES] option was broken.
+- create /usr/sbin/rccsa symlink at %install in the spec file
+- remove code for CSA record types not supported in Linux
+- spliting up csa_kern.h into kernel version and userland version
+- support pacct files created in csa-2.*.*
+
+* Wed Jul 27 2005 Chris Sturtivant <csturtiv@sgi.com>
+- csa-2.2.2
+- Disabled perror for permission denied in csa_ctl when called by csa_auth
+
+* Mon May 2 2005 Jay Lan <jlan@sgi.com>
+- csa-2.2.1
+- clean up csa init script
+- csa_wracct(3) man page update
+- 'csacom -o' wrote only one record
+- 'csacom -b' does not work
+- csajrep man page references invalid option '-W'
+- 'csajrep -r' does not work
+- 'dodisk' created files with incorrect user and group name 'adm'
+- CSA does not handle gid's > 65535
+- 'csacom -j' failed if job id greater than max value of an int
+
+* Mon Nov 22 2004 Jay Lan <jlan@sgi.com>
+- csa-2.2.0
+- Fixed compilation issue with gcc 3.3.3
+- CSA assumes existence of 'adm' user/group account
+- csacom & csacms usage otuput missing carriage return
+- csarecy misses a carriage return on certain condition
+- csacom -W segfaults after printing one bad time
+
+* Fri Oct 8 2004 Jay Lan <jlan@sgi.com>
+- csa-2.1.2
+- Fixed 'csaswitch -c halt' bug
+- Fixed 'csaedit dumped core on bad wkmg record' bug
+
+* Tue Jul 27 2004 Jay Lan <jlan@sgi.com>
+- csa-2.1.1
+- Remove static API library libcsa.a from rpm package
+- Fixed a bug at csacom with invalid -u option
+- cascom headers and data not aligned correctly at output
+
+* Wed Jun 30 2004 Jay Lan <jlan@sgi.com>
+- csa-2.1.0
+- Fixed a problem dealing with accounting files > 2GB
+- Now derives "Day of Year" from other fields of the holidays file
+- Removed "Pages Swapped" from csacom and csacms - not supported in Linux
+- Fixed a bug of not mapping UID 0 to root
+
+* Tue Feb 17 2004 Jay Lan <jlan@sgi.com>
+- csa-2.0.0
+- Implemented /proc ioctl interface
+- Renamed rpm from csa-job-acct to csa
+- Renamed /etc/init.d/csaacct to /etc/init.d/csa
+
+* Fri Nov 7 2003 Jay Lan <jlan@sgi.com>
+- csa-job-acct-2.0.0
+- Provided API library libcsa.so and associated header file
+
+* Wed Sep 3 2003 Jay Lan <jlan@sgi.com>
+- csa-job-acct-1.0.3
+- Updated the spec file
+
+* Thu Feb 13 2003 Robin Holt <holt@sgi.com>
+- Updated init scripts to use /var/lock/subsys
+
+* Tue Nov 5 2002 Richard Offer <offer@sgi.com>
+- Fixed packager/distribution/vendor
+
+* Thu May 23 2002 Robin Holt <holt@sgi.com>
+- csa-job-acct-1.0.2
+- Changed install destination from /usr/local to /usr
+- Updated the man page location to /usr/share/man
+- Added a clean and realclean target to the Makefile
+
+* Thu Apr 5 2001 Marlys Kohnke <kohnke@sgi.com>
+- Changed csadrep internal markers back to match those in IRIX CSA
+- Changed ja summary report so that all lines are displayed even if the
+  resource used values are zero
+
+* Sun Feb 11 2001 Marlys Kohnke <kohnke@sgi.com>
+- Added support for Workload Management daemon accounting records
+- Fixed csachkpacct script problem (df -k needs to be df -kP; changed awk
+  field to 4)
+
+* Fri Jan 19 2001 Daryl Grunau <dwg@acl.lanl.gov>
+- port to Linux from SGI IRIX
+- csa-job-acct-1.0.0 (available January 19, 2001)
+- initial csa-job-acct-1.0.0 open source release

@@ -1,0 +1,1026 @@
+#! /bin/sh
+#
+# Copyright (c) 2000-2002 Silicon Graphics, Inc and LANL  All Rights Reserved.
+# Copyright (c) 2007 Silicon Graphics, Inc  All Rights Reserved.
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as 
+# published by the Free Software Foundation; either version 2 of
+# the License, or (at your option) any later version.
+# 
+# This program is distributed in the hope that it would be useful, but 
+# WITHOUT ANY WARRANTY; without even the implied warranty of 
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details. 
+#
+# You should have received a copy of the GNU General Public License along 
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 59 Temple Place - Suite 330, Boston MA 02111-1307, USA.
+#
+# Contact information:  Silicon Graphics, Inc., 1140 East Arques Avenue, 
+# Sunnyvale, CA  94085, or:
+# 
+# http://www.sgi.com 
+#
+# csarun.sh:
+#	Perform daily accounting.  This script should be run daily by
+#	cron(1M) at some off-peak time.
+#
+#	This script progresses through a series of states as the work is
+#	processed.  In the event of a failure, the error can be corrected
+#	offline and the accounting restarted from the current state.  The
+#	state progression is as follows:
+#
+#	COMPLETE -> SETUP    -> VERIFY   -> ARCHIVE1 -> BUILD  ->
+#	ARCHIVE2 -> CMS      -> REPORT   -> DREP     -> FEF    ->
+#	USEREXIT -> CLEANUP  -> COMPLETE
+#
+#	This script provides four "user exits":	@sbindir@/csa.archive1,
+#	@sbindir@/csa.archive2, @sbindir@/csa.fef, and 
+#	@sbindir@/csa.user.  This allows sites to tailor the daily
+#	run of accounting to their specific needs by creating these
+#	scripts to perform any additional processing.  The user exit
+#	locations are found within the ARCHIVE1, ARCHIVE2, FEF, and 
+#	USEREXIT states.  The user needs to ensure that csarun can read
+#	the user exit scripts.  If csarun cannot read the scripts, it does
+#	not handle the error graciously like it does for other errors.
+#	This means the error will not be logged in SYSLOG and the active
+#	file, and no notification email will be sent out.
+#
+#	The csa.conf file is referenced to get values for some of the
+#	commonly changed parameters for the following commands:
+#	{ umask, chmod, chgrp, csabuild, csarecy, csacrep, csadrep }.
+#	This will allow a site to modify the parameters used by these
+#	commands without changing the csarun script.
+#	The default action is to work as before.
+#
+#	usage:	csarun [-A] [-V level] [MMDD [hhmm [state]]]
+#	options:	-A		Account for all jobs, do not recycle 
+#					active jobs.
+#			-V level	Controls verification level for
+#					accounting datafiles.  Levels are as 
+#					follows:
+#					   0 = run csaverify/csaedit (default)
+#					   1 = run csaverify only
+#					   2 = do not run csaverify
+#
+PROG=`basename $0`
+DATE="`date +'%m''%d'`"
+TIME="`date +'%H''%M'`"
+DTIME=${DATE}${TIME}
+
+PATH=@sbindir@:/bin/:/usr/bin:/etc
+export PATH
+set +o noclobber
+
+#
+#	These directory variables aren't generally changed.
+#
+ACCT_DIR=@csalocalstatedir@	# accounting directory
+DAY_DIR=${ACCT_DIR}/day		# current acct file directory
+NITE_DIR=${ACCT_DIR}/nite	# logging/error directory
+WORK_DIR=${ACCT_DIR}/work	# upper level work directory
+SUM_DIR=${ACCT_DIR}/sum		# upper level processed acct directory
+
+#
+#	Other directory variables created.
+#
+WDAY_DIR=${WORK_DIR}/${DATE}		# date level work directory
+WTIME_DIR=${WDAY_DIR}/${TIME}		# time level work directory
+
+#
+#	These file variables aren't generally changed.
+#
+ACTIVE=${NITE_DIR}/active	# csarun activity file
+LASTDATE=${NITE_DIR}/clastdate	# last date/time csa acct was run
+STATEFILE=${NITE_DIR}/statefile	# current state of csarun
+SPACCT=${WTIME_DIR}/spacct	# sorted pacct file
+LOCK=${NITE_DIR}/lock
+
+#
+#	Create the active file.
+#
+nulladm ${ACTIVE}
+
+#
+#	These csagetconfig variables aren't generally changed here.
+#	They are changed by making changes to the csa.conf file.
+#	csarun can use a local copy of csa.conf by defining the symbol
+#	CSACONFIG to the full path for the file directory path.
+#	e.g.	setenv CSACONFIG @csalocalstatedir@/csa.conf1		(csh)
+#		set CSACONFIG=@csalocalstatedir@/csa.conf1		(sh)
+#		export CSACONFIG
+#
+ACCT_FS=`csagetconfig ACCT_FS`		# filesystem containing ${ACCT_DIR}
+FMAILLIST=`csagetconfig MAIL_LIST`	# Fatal error mail recipients
+WMAILLIST=`csagetconfig WMAIL_LIST` 	# Warning error mail recipients
+MIN_BLKS=`csagetconfig MIN_BLKS`	# minimum free blocks in ${ACCT_FS}
+
+CSABUILD=`csagetconfig CSABUILD`	# csabuild call parameters {}
+CSACMS=`csagetconfig CSACMS`		# csacms call parameters {}
+CSACREP=`csagetconfig CSACREP`		# csacrep call parameters {-hucw}
+CSADREP=`csagetconfig CSADREP`		# csadrep call parameters {-a}
+CSARECY=`csagetconfig CSARECY`		# csarecy call parameters {-r}
+CHMOD=`csagetconfig CHMOD`		# chmod mask value for MK_DIR calls
+CHGRP=`csagetconfig CHGRP`		# chgrp group value for MK_DIR calls
+UMASK=`csagetconfig UMASK`		# umask value
+
+if [ "${CHMOD}" = "" ]
+then
+	CHMOD=770
+	echo -e "`date` - csarun: CHMOD symbol is missing from the" >> ${ACTIVE}
+	echo -e "csa.conf file, using (770) as the value." >> ${ACTIVE}
+fi
+
+if [ "${CHGRP}" = "" ]
+then
+	CHGRP=csaacct
+	echo -e "`date` - csarun: CHGRP symbol is missing from the" >> ${ACTIVE}
+	echo -e "csa.conf file, using (csaacct) as the value." >> ${ACTIVE}
+fi
+
+#	Make sure that the csaacct group can access output files.
+if [ "${UMASK}" ]
+then
+	umask ${UMASK}
+else
+	umask 0017
+	echo -e "`date` - csarun: UMASK symbol is missing from the" >> ${ACTIVE}
+	echo -e "csa.conf file, using (0017) as the value." >> ${ACTIVE}
+fi
+
+#
+#	These information variables aren't generally changed.
+#
+RELEASE="`uname -r`, `uname -s`" # Operating system release and name
+SYSNAME="`uname -n`"		# Host name or node name
+RELMSG="(Rel ${RELEASE})"	# Release and OS name message format
+
+#
+#	The daily report can be customized by changing these messages.
+#
+#	The header messages are used in the pr command header and include
+#	the system name and release information.
+#	e.g. ${DAYHDR} ${SYSNAME} ${RELMSG}
+#	DAILY REPORT
+#	porsche05 (Rel 2.4.0-test7.csa.1, Linux)
+#
+#	The other messages are used as a title line in the report and contain
+#	the data start date and time and end date and time.
+#	e.g. "${CMDMSG} ${BTWMSG}\n"
+#	COMMAND INFORMATION REPORT BETWEEN 12/10 00:00   AND   12/10 10:00
+#
+USAGE="usage: ${0} [-A] [-V level] [MMDD [hhmm [state]]]"
+
+#RPTHDR=${ALLMSG} | ${TERMSG}		# report option message
+ALLMSG="INCLUDES ALL JOBS INFORMATION"	# -A report content message
+TERMSG="INCLUDES ONLY JOBS COMPLETED"	# report content message
+
+CMDHDR="DAILY COMMAND SUMMARY"	# daily command usage report header
+DAEHDR="DAEMON USAGE REPORT"	# daemon usage report header
+DAYHDR="DAILY REPORT"		# daily report header
+DSKHDR="DISK USAGE REPORT"		# disk usage information report header
+LOGHDR="LAST LOGIN INFORMATION"	# last login information report header
+RCYHDR="UNFINISHED JOBS"		# unfinished job report header
+
+CMDMSG="COMMAND INFORMATION REPORT"	# command report title message
+CONMSG="CONSOLIDATED INFORMATION REPORT" # csacrep report title message
+DAEMSG="DAEMON USAGE REPORT"		# daemon usage report title message
+DSKMSG="DISK USAGE REPORT"		# disk usage report title message
+LOGMSG="LAST LOGIN INFORMATION"		# last login report title message
+RCYMSG="UNFINISHED JOBS RECYCLED"	# unfinished job report title message
+
+#
+#	Names of the accounting files used by csabuild.
+#
+PACCT=Wpacct
+
+#
+#	Function to mkdir, set mode, and change group to csaacct
+#
+MK_DIR () { mkdir ${1}; chmod ${CHMOD} ${1}; chgrp ${CHGRP} ${1}; }
+
+#
+#	Function to handle error exits.
+#
+ERROR_EXIT ()
+{
+
+	DT="$DATE$TIME"
+	#echo "about to set ERRMSG"
+	ERRMSG="**** CSA ERRORS : see ${ACTIVE}${DT} ****"
+	#echo "about to run logger"
+	logger -p cron.notice -t ${PROG} "${ERRMSG}"
+	#echo "about to mail"
+	echo "${ERRMSG}" | Mail -s "CSA ERRORS" ${FMAILLIST}
+	echo -e "`date` - csarun error\tError: ${CSAERRMSG}" >> ${ACTIVE}
+	mv ${ACTIVE} ${ACTIVE}${DT}
+	rm -f ${LOCK}
+	exit 1
+}
+
+#
+#	Function to handle verification and editing of accounting datafiles.
+#	Usage:  CSAVERIFY
+#
+CSAVERIFY()
+{
+INVALID=0
+while [ ${INVALID} = 0 ]
+do
+	nulladm Ever.tmp1	# offsetfile containing information about
+				# invalid records that are to be deleted
+	nulladm Ever.tmp2	# temp file to determine verification errors
+	csaverify -v -P ${FILE} -o Ever.tmp1 1>> Ever.tmp2 2>&1
+	RET=${?}
+
+	#
+	#	If the return value from csaverify is not 0, 1, or 2,
+	#	csaverify probably dumped core. If so, error exit
+	#	out of csarun now.
+	#
+	if [ ${RET} -ne 0 -a ${RET} -ne 1 -a ${RET} -ne 2 ]
+	then
+		CORE_MSG="csaverify ERROR: csaverify probably dumped core"
+		CORE_MSG="${CORE_MSG} when checking\n"
+		CORE_MSG="${CORE_MSG} file ${FILE}. You may need to remove "
+		CORE_MSG="${CORE_MSG} this file\n"
+		CORE_MSG="${CORE_MSG} before restarting csarun.\n"
+
+		echo -e ${CORE_MSG} >> ${NITE_DIR}/Ever.${DTIME}
+
+		return 1
+	fi
+
+	#
+	#	If csaverify wrote to Ever.tmp2, then invalid data was found.
+	#	If EDIT = 0 and the offsetfile is not empty, run the datafile
+	#	through csaedit.
+	#
+	if [ -s Ever.tmp2 ]
+	then
+		cat Ever.tmp2 >> ${NITE_DIR}/Ever.${DTIME}
+		if [ ${EDIT} = 0 -a -s Ever.tmp1 ]
+		then
+			csaedit -v -P ${FILE} -o E${FILE} -b Ever.tmp1 1>> \
+					${NITE_DIR}/Ever.${DTIME} 2>&1
+			if [ ${?} -ne 0 ]
+			then
+				return 2	# indicate editing errors
+			else
+				mv ${FILE} BAD.${FILE}
+				mv E${FILE} ${FILE}
+				chmod 664 ${FILE} BAD.${FILE}
+				chgrp ${CHGRP} ${FILE} BAD.${FILE}
+			fi
+
+		else
+			#
+			#	csaverify found invalid data, but either the
+			#	editing option was turned off or there was
+			#	nothing in the offsetfile.  Return 1 to
+			#	indicate csaverify errors and halt execution.
+			#
+			return 1
+		fi
+	else
+		#
+		#	If csaverify did not find invalid data, then set
+		#	INVALID=1 so that we don't run through the loop 
+		#	again but proceed to the next datafile.
+		#
+		INVALID=1
+	fi
+done
+return 0					# successful execution
+}
+
+#
+#	Process command line options.
+#
+ERRFLAG=0
+VERIFY=0					# run csaverify by default
+EDIT=0						# run csaedit (default)
+RECYCLE=0					# recycle incomplete jobs
+RPTHDR=${TERMSG}
+
+while getopts AV: OPTION
+do
+	case ${OPTION} in
+	A)
+		ALLJOBS="-A"
+		RECYCLE=1
+		RPTHDR=${ALLMSG}
+		;;
+	V)
+		VERIFY=${OPTARG}		# verify level
+		if [ ${VERIFY} -gt 2 ]
+		then
+			echo -e "${USAGE}" >&2
+			echo -e "	Valid verify levels are:  0, 1, 2." >&2
+			exit 1
+		fi
+		if [ ${VERIFY} -ge 1 ]
+		then
+			EDIT=1			# do not run csaedit
+		fi
+		;;
+	?)
+		ERRFLAG=1
+		;;
+	esac
+done
+shift `expr ${OPTIND} - 1`	# Get rid of "--"
+
+if [ ${ERRFLAG} -ne 0 ]
+then
+	echo -e "${USAGE}" >&2
+	exit 1
+fi
+
+#
+#	Make sure that 2 crons weren't started or that there aren't
+#	leftover problems.
+#
+cd ${NITE_DIR}
+# If lock exists, error out.  Otherwise, create a lock
+if [ -r $LOCK ]; then
+	CSAERRMSG="ERROR: $LOCK exists - aborting."
+        ERROR_EXIT
+else
+        date > $LOCK
+        chmod 400 $LOCK
+fi
+
+#
+#	See if there is enough space in ${ACCT_FS} to do nightly accounting.
+#
+BLOCKS=`df -kP ${ACCT_FS} | sed -n 2p | awk '{print $4}'`
+#	Space for the sorted pacct file
+DAY_BLKS=`du -sk ${DAY_DIR} | cut -d"	" -f1`
+MIN_BLKS=`expr ${MIN_BLKS} + ${DAY_BLKS}`
+if [ ${BLOCKS} -le ${MIN_BLKS} ]
+then
+	CSAERRMSG="Insufficient space in ${ACCT_FS} \
+		\n\t${MIN_BLKS} blocks needed, ${BLOCKS} blocks exist"
+	ERROR_EXIT
+fi
+
+#
+#	Process the remaining options.
+#
+case ${#} in
+0)
+# csarun
+#	As called periodically by cron
+#
+	if [ -r ${LASTDATE} ]
+	then
+		read ODATE OTIME < ${LASTDATE}
+		if [ "${ODATE}" = "${DATE}" -a "${OTIME}" = "${TIME}" ]
+		then
+			CSAERRMSG="acct already run for ${DTIME} \
+				\n\tSee ${LASTDATE}"
+			ERROR_EXIT
+		fi
+	else
+		echo "0000 0000" > ${LASTDATE}
+		chgrp ${CHGRP} ${LASTDATE}
+		ODATE="0000"
+		OTIME="0000"
+	fi
+#
+#	Make sure that accounting was successfully completed last
+#	time, otherwise the uptime could get messed up
+#
+	if [ "`cat ${STATEFILE}`" != "COMPLETE" ]
+	then
+		CSAERRMSG="previous accounting errors MUST be corrected \
+			\n\tbefore new accounting data can be processed!"
+		ERROR_EXIT
+	fi
+
+#
+#	Get rid of old error and active files
+#	Put DATE and TIME, as well as ODATE and OTIME in ${LASTDATE}
+#	ODATE and OTIME are stored for later use in report header
+#
+	cd ${NITE_DIR}
+	rm -f E*${ODATE}${OTIME} active${ODATE}${OTIME} 2> /dev/null
+	
+	echo "${DATE} ${TIME}"> ${LASTDATE}
+	echo "${ODATE} ${OTIME}" >> ${LASTDATE}
+	echo "SETUP" > ${STATEFILE}
+        echo -e "`date` - starting accounting" >> ${ACTIVE}
+	logger -p cron.notice "*** CSA JOB ACCOUNTING STARTED `date` ***" 2> /dev/null
+	;;
+
+1)
+# csarun MMDD  
+#	Restart for specified date using the time in ${LASTDATE}
+#	and the state in ${STATEFILE}
+#
+	DATE=${1}
+	read ODATE TIME < ${LASTDATE}
+	if [ ${DATE} -ne ${ODATE} ]
+	then
+		CSAERRMSG="specified date (${DATE}) does not match date \
+			\n\tin ${LASTDATE} (${ODATE})"
+		ERROR_EXIT
+	fi
+	RESTART=0		# flag this as a restart
+        ;;
+
+2)
+# csarun MMDD HHMM 
+#	Restart for specified date and time using the state found in 
+#	${STATEFILE}
+#
+        DATE=${1}
+	TIME=${2}
+	read ODATE OTIME < ${LASTDATE}
+	if [ ${ODATE} -ne ${DATE} -o ${OTIME} -ne ${TIME} ]
+	then
+		CSAERRMSG="specified date/time (${DATE}/${TIME}) do not match \
+			\n\tthose in ${LASTDATE} (${ODATE}/${OTIME})"
+		ERROR_EXIT
+	fi
+	RESTART=0		# flag this as a restart
+        ;;
+
+3)
+# csarun MMDD HHMM STATE
+#	Restarts for specified date, time, and state
+#
+        DATE=${1}
+	TIME=${2}
+	echo ${3} > ${STATEFILE}
+	RESTART=0		# flag this as a restart
+        ;;
+
+*)
+        CSAERRMSG="${0} called with invalid arguments"
+	ERROR_EXIT
+        ;;
+esac
+
+#
+#	If this is a restart, make sure the old work directory exists.  If
+#	necessary, the sorted pacct file should also exist.  If this is not
+#	a restart, create the work directory.
+#
+#	Get rid of the old ${ACTIVE} file, if it exists.
+#
+if [ "${RESTART}" = "0" ]
+then
+	WDAY_DIR=${WORK_DIR}/${DATE}
+	WTIME_DIR=${WDAY_DIR}/${TIME}
+	SPACCT=${WTIME_DIR}/spacct
+	if [ ! -d ${WTIME_DIR} ]
+	then
+		CSAERRMSG="cannot restart for ${DATE}/${TIME}, \
+			\n\t${WTIME_DIR} does not exist!"
+		ERROR_EXIT
+	fi
+
+#
+#	Get ODATE and OTIME from ${LASTDATE} file.  This is the date
+#	and time when csarun was last run successfully.  This is for
+#	display in the report header.
+#
+	exec < ${LASTDATE}
+	while read TMP1 TMP2
+	do
+		read ODATE OTIME
+	done
+ 
+	STATE=`cat ${STATEFILE}`
+	case ${STATE} in
+	ARCHIVE2|CMS|REPORT|DREP|FEF)
+		if [ ! -f ${SPACCT} ]
+		then
+			logger -p cron.notice \
+			"CSA cannot restart for ${DATE}/${TIME} at ${STATE}, \
+${SPACCT} does not exist, will restart from BUILD!" 2> /dev/null
+			echo "BUILD" > ${STATEFILE}
+		fi
+		;;
+	esac
+
+	if [ -f ${ACTIVE}${DTIME} ]
+	then
+		rm -f ${ACTIVE}${DTIME}
+	fi
+
+        echo -e "`date` - restarting accounting for ${DATE} at ${TIME}" \
+		>> ${ACTIVE}
+        echo -e "\twith state `cat ${STATEFILE}`" >> ${ACTIVE}
+	logger -p cron.notice "*** CSA JOB ACCOUNTING RESTARTED for ${DATE}/${TIME} ***" \
+	2> /dev/null
+else	# not a restart
+	if [ ! -d ${WORK_DIR} ]
+	then
+		MK_DIR ${WORK_DIR}
+	fi
+	if [ ! -d ${WDAY_DIR} ]
+	then
+		MK_DIR ${WDAY_DIR}
+	fi
+	if [ ! -d ${WTIME_DIR} ]
+	then
+		MK_DIR ${WTIME_DIR}
+	fi
+fi
+
+#
+#	Prepare the start and end date and time information.
+#
+DTIME=${DATE}${TIME}
+S_DATE=`echo ${ODATE} | sed 's/\(..\)\(..\)\(.*\)/\1\/\2/'`
+S_TIME=`echo ${OTIME} | sed 's/\(..\)\(..\)\(.*\)/\1\:\2/'`
+E_DATE=`echo ${DATE} | sed 's/\(..\)\(..\)\(.*\)/\1\/\2/'`
+E_TIME=`echo ${TIME} | sed 's/\(..\)\(..\)\(.*\)/\1\:\2/'`
+BTWMSG="BETWEEN ${S_DATE} ${S_TIME}   AND   ${E_DATE} ${E_TIME}"
+
+#
+#	Processing is broken down into separate, restartable states.
+#	The ${STATEFILE} is updated at the end of each state to contain
+#	the name of the next state to be processed.
+#
+while [ 1 ]
+do
+case `cat ${STATEFILE}` in
+SETUP)		
+#	Move the current pacct and disk files to ${WTIME_DIR}.
+#
+if [ "${RESTART}" = "" ]
+then				# this is not a restart
+	cd ${DAY_DIR}
+	csaswitch -c switch	# switch current pacct file
+	RC=${?}
+	if [ ${RC} -ne 0 ]
+	then
+		CSAERRMSG="SETUP - \"csaswitch -c switch\" rc = ${RC}"
+		ERROR_EXIT
+	fi
+
+#
+#	Preface the accounting files with "W", just in case somebody does
+#	a switch while we're processing.  
+#
+	for FILE in `ls pacct?* dtmp 2> /dev/null`
+	do
+		if [ -r ${WTIME_DIR}/W${FILE} ]
+		then
+			CSAERRMSG="SETUP - ${WTIME_DIR}/W${FILE} already exists\
+				\n\tFile setups probably already run."
+			ERROR_EXIT
+		fi
+		mv ${FILE} ${WTIME_DIR}/W${FILE}
+	done
+
+	if [ -r ${NITE_DIR}/diskcacct ]
+	then
+		mv ${NITE_DIR}/diskcacct ${WTIME_DIR}/Wdiskcacct
+	fi
+fi
+	
+echo -e "`date` - SETUP: setup complete" >> ${ACTIVE}
+echo "VERIFY" > ${STATEFILE}
+;;
+
+VERIFY)
+#	Verify levels are:  0 = run csaverify and edit data files if
+#	necessary (default), 1 = run csaverify only, 2 = do not run csaverify.
+#	If verify level 0 or 1 was set, check the accounting data files
+#	for valid data.  If verify level 0 was set, run csaedit on datafiles
+#	as necessary.
+#
+if [ ${VERIFY} -le 1 ]
+then
+	cd ${WTIME_DIR}
+	for FILE in `ls ${PACCT}* 2> /dev/null`
+	do
+		if [ -s ${FILE} ]
+		then
+			CSAVERIFY
+			#
+			#	Process return status
+			#
+			case ${?} in
+			0)  ;;
+			1)  CSAERRMSG="VERIFY - csaverify errors \
+\n\tSee ${NITE_DIR}/Ever.${DTIME} and/or ${NITE_DIR}/fd2log"
+			    ERROR_EXIT
+			    ;;
+			2)  CSAERRMSG="VERIFY - csaedit errors \
+\n\tSee ${NITE_DIR}/Ever.${DTIME} and/or ${NITE_DIR}/fd2log"
+			    ERROR_EXIT
+			    ;;
+			esac
+		fi
+	done
+	echo -e "`date` - VERIFY: verification complete" >> ${ACTIVE}
+fi
+echo "ARCHIVE1" > ${STATEFILE}
+;;
+
+ARCHIVE1)
+#	User exit:
+#	If there exists a script named "@sbindir@/csa.archive1",
+#	it will be executed via the shell "." command.  The "."
+#	command will not execute a compiled program, but the script
+#	file executed can.
+#
+#	A possible use of this exit would be to archive the accounting 
+#	files in ${WTIME_DIR}.
+#
+#	csarun will check the return status from "csa.archive1".  If the
+#	return status is non-zero, execution of csarun will be aborted.
+#
+if [ -s @sbindir@/csa.archive1 ]
+then
+	. @sbindir@/csa.archive1 2> ${NITE_DIR}/Earc1.${DTIME}
+	if [ ${?} -ne 0 ]
+	then
+		CSAERRMSG="ARCHIVE1 - csa.archive1 errors \
+\n\tSee ${NITE_DIR}/Earc1.${DTIME} and/or ${NITE_DIR}/fd2log"
+		ERROR_EXIT
+	fi
+	echo -e "`date` - ARCHIVE1: @sbindir@/csa.archive1 complete" \
+		>> ${ACTIVE}
+fi
+echo "BUILD" > ${STATEFILE}
+;;
+
+BUILD)
+#
+#	Put all the accounting data into a sorted pacct file.
+#
+cd ${WTIME_DIR}
+if [ "${CSABUILD}" != "" ]
+then
+	csabuild -s ${SPACCT} -P ${WTIME_DIR}/${PACCT} ${CSABUILD} \
+		2> ${NITE_DIR}/Ebld.${DTIME}
+else
+	csabuild -s ${SPACCT} -P ${WTIME_DIR}/${PACCT} -i \
+		2> ${NITE_DIR}/Ebld.${DTIME}
+fi
+if [ ${?} -ne 0 ]
+then
+	CSAERRMSG="BUILD - csabuild errors \
+		\n\tSee ${NITE_DIR}/Ebld.${DTIME} and/or ${NITE_DIR}/fd2log"
+	ERROR_EXIT
+fi
+chgrp ${CHGRP} ${SPACCT}
+
+echo -e "`date` - BUILD: sorted pacct accounting file complete" >> ${ACTIVE}
+echo "ARCHIVE2" > ${STATEFILE}
+;;
+
+ARCHIVE2)
+#	User exit:
+#	If there exists a script named "@sbindir@/csa.archive2",
+#	it will be executed via the shell "." command.  The "."
+#	command will not execute a compiled program, but the script
+#	file executed can.
+#
+#	A possible use of this exit might be to archive the sorted pacct
+#	file to tape.
+#
+#	csarun will check the return status from "csa.archive2".  If the
+#	return status is non-zero, execution of csarun will be aborted.
+#
+if [ -s @sbindir@/csa.archive2 ]
+then
+	. @sbindir@/csa.archive2 2> ${NITE_DIR}/Earc2.${DTIME}
+	if [ ${?} -ne 0 ]
+	then
+		CSAERRMSG="ARCHIVE2 - csa.archive2 errors \
+\n\tSee ${NITE_DIR}/Earc2.${DTIME} and/or ${NITE_DIR}/fd2log"
+		ERROR_EXIT
+	fi
+	echo -e "`date` - ARCHIVE2: @sbindir@/csa.archive2 complete" \
+		>> ${ACTIVE}
+fi
+echo "CMS" > ${STATEFILE}
+;;
+
+CMS)
+#	Generate command summaries.
+#
+cd ${SUM_DIR}
+csacms ${ALLJOBS} -S ${SPACCT} > cms.${DTIME} 2> ${NITE_DIR}/Ecms.${DTIME}
+if [ ${?} -ne 0 ]
+then
+	CSAERRMSG="REPORT - csacms errors \
+		\n\tSee ${NITE_DIR}/Ecms.${DTIME} and/or ${NITE_DIR}/fd2log"
+	ERROR_EXIT
+fi
+chgrp ${CHGRP} cms.${DTIME}
+echo -e "`date` - CMS: command summaries complete" >> ${ACTIVE}
+echo "REPORT" > ${STATEFILE}
+;;
+
+
+REPORT)
+#	Generate reports and recycle job records.
+#
+cd ${WTIME_DIR}
+#
+#	Consolidate the sorted pacct file.
+#
+csacon ${ALLJOBS} -s ${SPACCT} > ${SUM_DIR}/cacct.${DTIME} \
+	2> ${NITE_DIR}/Econ.${DTIME}
+if [ ${?} -ne 0 ]
+then
+	CSAERRMSG="REPORT - csacon errors \
+		\n\tSee ${NITE_DIR}/Econ.${DTIME} and/or ${NITE_DIR}/fd2log"
+	ERROR_EXIT
+fi
+chgrp ${CHGRP} ${SUM_DIR}/cacct.${DTIME}
+
+#
+#	Generate the recycled report and data file.
+#
+if [ "${RECYCLE}" != "1" ]
+then
+	if [ "${CSARECY}" != "" ]
+	then
+		csarecy ${CSARECY} -s ${SPACCT} -P ${WTIME_DIR}/Rpacct \
+			> ${SUM_DIR}/recyrpt.${DTIME}
+			2> ${NITE_DIR}/Erec.${DTIME}
+	else
+		csarecy -r -s ${SPACCT} -P ${WTIME_DIR}/Rpacct \
+			> ${SUM_DIR}/recyrpt.${DTIME}
+			2> ${NITE_DIR}/Erec.${DTIME}
+	fi
+
+	if [ ${?} -ne 0 ]
+	then
+		CSAERRMSG="REPORT - csarecy errors \
+\n\tSee ${NITE_DIR}/Erec.${DTIME} and/or ${NITE_DIR}/fd2log"
+		ERROR_EXIT
+	fi
+	#
+	#	Move recycled pacct file to ${DAY_DIR}.
+	#
+	if [ -s Rpacct0 ]
+	then
+		mv Rpacct0 ${DAY_DIR}/pacct0
+		#
+		#	csacom needs to be able to read pacct0.
+		#
+		chmod 664 ${DAY_DIR}/pacct0
+		chgrp ${CHGRP} ${DAY_DIR}/pacct0
+	fi
+fi
+#
+#	Generate the consolidated accounting report.
+#	Sort the report by user ID, then project ID.
+#
+if [ "${CSACREP}" != "" ]
+then
+	csacrep ${CSACREP} < ${SUM_DIR}/cacct.${DTIME} \
+		> ${SUM_DIR}/conrpt.${DTIME} 2> ${NITE_DIR}/Ecrpt.${DTIME}
+else
+	csacrep -hucw < ${SUM_DIR}/cacct.${DTIME} \
+		> ${SUM_DIR}/conrpt.${DTIME} 2> ${NITE_DIR}/Ecrpt.${DTIME}
+fi
+
+if [ ${?} -ne 0 ]
+then
+	CSAERRMSG="REPORT - csacrep errors \
+		\n\tSee ${NITE_DIR}/Ecrep.${DTIME} and/or ${NITE_DIR}/fd2log"
+	ERROR_EXIT
+fi
+
+#
+#	Generate the command usage report.
+#
+csacms ${ALLJOBS} ${CSACMS} ${SPACCT} 2> ${NITE_DIR}/Ecmd.${DTIME} \
+	| sed -n 1,51p > ${SUM_DIR}/cmsrpt.${DTIME}
+if [ ${?} -ne 0 ]
+then
+	CSAERRMSG="REPORT - csacms errors \
+		\n\tSee ${NITE_DIR}/Ecms.${DTIME} and/or ${NITE_DIR}/fd2log"
+	ERROR_EXIT
+fi
+
+#
+#	Generate the lastlogin report.
+#
+lastlogin -c ${SUM_DIR}/cacct.${DTIME}
+
+#
+#	Put all of the reports together.
+#
+cd ${SUM_DIR}
+#nulladm rprt.${DTIME}
+
+#
+#	Consolidated information report.
+#
+echo -e "${SYSNAME} ${RELMSG}" > tmprprt
+echo -e "${RPTHDR}\n" >> tmprprt
+echo -e "${CONMSG} ${BTWMSG}\n" >> tmprprt
+cat conrpt.${DTIME} >> tmprprt
+pr -h "${DAYHDR}" tmprprt >> rprt.${DTIME}
+
+#
+#	Recycle data information report.
+#
+if [ -s recyrpt.${DTIME} ]
+then
+	echo -e "${SYSNAME} ${RELMSG}" > tmprprt
+	echo -e "\n" >> tmprprt
+	echo -e "${RCYMSG} ${BTWMSG}\n" >> tmprprt
+	cat recyrpt.${DTIME} >> tmprprt
+	pr -h "${RCYHDR}" tmprprt >> rprt.${DTIME}
+elif [ "${RECYCLE}" = "1" ]
+then
+	echo -e "\n\nTerminated and unterminated job data was reported.\n" \
+		"\tNo jobs were recycled as a result.\n" \
+		"${SYSNAME} ${RELMSG}" \
+		| pr -h "${RCYHDR}" >> rprt.${DTIME}
+else
+	echo -e "\n\n\tNo unfinished jobs found.\n" \
+		"${SYSNAME} ${RELMSG}" \
+		| pr -h "${RCYHDR}" >> rprt.${DTIME}
+fi
+
+#
+#	Disk usage information report.
+#
+if [ -s ${WTIME_DIR}/Wdtmp ]
+then
+	echo -e "${SYSNAME} ${RELMSG}" > tmprprt
+	echo -e "\n" >> tmprprt
+	echo -e "${DSKMSG} ${BTWMSG}\n" >> tmprprt
+	cat ${WTIME_DIR}/Wdtmp >> tmprprt
+	pr -h "${DSKHDR}" tmprprt >> rprt.${DTIME}
+fi
+
+#
+#	Command summary information report.
+#
+echo -e "${SYSNAME} ${RELMSG}" > tmprprt
+echo -e "${RPTHDR}\n" >> tmprprt
+echo -e "${CMDMSG} ${BTWMSG}\n" >> tmprprt
+cat cmsrpt.${DTIME} >> tmprprt
+pr -h "${CMDHDR}" tmprprt >> rprt.${DTIME}
+
+#
+#	Last login information report.
+#
+if [ -s loginlog ]
+then
+	echo -e "${SYSNAME} ${RELMSG}" > tmprprt
+	echo -e "\n" >> tmprprt
+	echo -e "${LOGMSG} ${BTWMSG}\n" >> tmprprt
+	pr -t -3 loginlog >> tmprprt  # Print in 3 columns.
+	pr -h "${LOGHDR}" tmprprt >> rprt.${DTIME}
+fi
+
+chgrp ${CHGRP} rprt.${DTIME}
+
+echo -e "`date` - REPORT: report processing complete" >> ${ACTIVE}
+echo "DREP" > ${STATEFILE}
+;;
+
+DREP)
+#	Generate a daemon usage report.
+#
+cd ${WTIME_DIR}
+if [ "${CSADREP}" != "" ]
+then
+	csadrep ${ALLJOBS} ${CSADREP} -s ${SPACCT} \
+		> ${SUM_DIR}/drpt.${DTIME} 2> ${NITE_DIR}/Edrpt.${DTIME}
+else
+	csadrep ${ALLJOBS} -a -s ${SPACCT} > ${SUM_DIR}/drpt.${DTIME} \
+		2> ${NITE_DIR}/Edrpt.${DTIME}
+fi
+
+if [ ${?} -ne 0 ]
+then
+	CSAERRMSG="DREP - csadrep errors \
+		\n\tSee ${NITE_DIR}/Edrpt.${DTIME} and/or ${NITE_DIR}/fd2log"
+	ERROR_EXIT
+fi
+if [ -s ${SUM_DIR}/drpt.${DTIME} ]
+then
+	echo -e "${SYSNAME} ${RELMSG}" > tmprprt
+	echo -e "${RPTHDR}\n" >> tmprprt
+	echo -e "${DAEMSG} ${BTWMSG}\n" >> tmprprt
+	cat ${SUM_DIR}/drpt.${DTIME} >> tmprprt
+	pr -h "${DAEHDR}" tmprprt \
+		>> ${SUM_DIR}/rprt.${DTIME}
+fi
+echo -e "`date` - DREP: daemon report processing complete" >> ${ACTIVE}
+echo "FEF" > ${STATEFILE}
+;;
+
+FEF)
+#	User exit:
+#	If there exists a script named "@sbindir@/csa.fef",
+#	it will be executed via the shell "." command.  The "."
+#	command will not execute a compiled program, but the script
+#	file executed can.
+#
+#	A possible use of this exit might be front-end formatting of 
+#	the sorted pacct file.
+#
+#	csarun will check the return status from "csa.fef".  If the
+#	return status is non-zero, execution of csarun will be aborted.
+#
+if [ -s @sbindir@/csa.fef ]
+then
+	. @sbindir@/csa.fef 2> ${NITE_DIR}/Efef.${DTIME}
+	if [ ${?} -ne 0 ]
+	then
+ 		CSAERRMSG="FEF - csafef errors \
+\n\tSee ${NITE_DIR}/Efef.${DTIME} and/or ${NITE_DIR}/fd2log"
+ 		ERROR_EXIT
+	fi
+	echo -e "`date` - FEF: @sbindir@/csa.fef complete" >> ${ACTIVE}
+fi
+echo "USEREXIT" > ${STATEFILE}
+;;
+
+USEREXIT)
+#	User exit:
+#	If there exists a script named "@sbindir@/csa.user",
+#	it will be executed via the shell "." command.  The "."
+#	command will not execute a compiled program, but the script
+#	file executed can.
+#
+#	A possible use of this exit might be to run site specific
+#	accounting programs.
+#
+#	csarun will check the return status from "csa.user".  If the
+#	return status is non-zero, execution of csarun will be aborted.
+#
+if [ -s @sbindir@/csa.user ]
+then
+	. @sbindir@/csa.user 2> ${NITE_DIR}/Euser.${DTIME}
+	if [ ${?} -ne 0 ]
+	then
+ 		CSAERRMSG="USEREXIT - csa.user errors \
+\n\tSee ${NITE_DIR}/Euser.${DTIME} and/or ${NITE_DIR}/fd2log"
+ 		ERROR_EXIT
+	fi
+	echo -e "`date` - USEREXIT: @sbindir@/csa.user complete" >> ${ACTIVE}
+fi
+echo "CLEANUP" > ${STATEFILE}
+;;
+
+CLEANUP)
+#	Cleanup the various directories we've used
+#
+cd /
+if [ -r ${WTIME_DIR}/Wdiskcacct ]
+then
+	mv ${WTIME_DIR}/Wdiskcacct ${SUM_DIR}/dacct.${DTIME}
+fi
+rm -fr ${WTIME_DIR}			# remove work/MMDD/hhmm
+rmdir ${WDAY_DIR} 2> /dev/null		# remove work/MMDD if empty
+
+rm -f ${SUM_DIR}/recyrpt.${DTIME} ${SUM_DIR}/conrpt.${DTIME}
+rm -f ${SUM_DIR}/cmsrpt.${DTIME} ${SUM_DIR}/tmprprt ${SUM_DIR}/drpt.${DTIME}
+
+#
+#	If there was anything written to an error file, tell someone
+#
+for I in `ls ${NITE_DIR}/E*${DTIME}`
+do
+	if [ ! -s ${I} ]
+	then
+		rm -f ${I}
+	else
+		EFILE="${EFILE} ${I}"
+	fi
+done
+if [ "${EFILE}" != "" ]
+then
+	chgrp ${CHGRP} ${EFILE}
+	echo -e "\nAccounting completed but non-fatal errors in:\n${EFILE}" \
+		| Mail -s "CSA ERRORS" ${WMAILLIST}
+	echo -e "`date` - CLEANUP: *** Non-fatal error messages in" >> ${ACTIVE}
+	echo "   ${EFILE}" >> ${ACTIVE}
+fi
+
+rm -f ${NITE_DIR}/lock*
+echo -e "`date` - CLEANUP: cleanup complete" >> ${ACTIVE}
+echo -e "`date` - system accounting completed" >> ${ACTIVE}
+logger -p cron.notice "*** CSA JOB ACCOUNTING COMPLETE `date` ***" 2> /dev/null
+echo "COMPLETE" > ${STATEFILE}
+exit 0
+;;
+
+*)
+        CSAERRMSG="invalid state, check ${STATEFILE}"
+	ERROR_EXIT
+;;
+
+esac
+done

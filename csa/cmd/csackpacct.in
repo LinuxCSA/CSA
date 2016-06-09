@@ -1,0 +1,211 @@
+#! /bin/bash
+#
+# Copyright (c) 2004-2007 Silicon Graphics, Inc  All Rights Reserved.
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as
+# published by the Free Software Foundation; either version 2 of
+# the License, or (at your option) any later version.
+#
+# This program is distributed in the hope that it would be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 59 Temple Place - Suite 330, Boston MA 02111-1307, USA.
+#
+# Contact information:  Silicon Graphics, Inc., 1140 East Arques Avenue,
+# Sunnyvale, CA  94085, or:
+#
+# http://www.sgi.com
+
+#  This script file would periodically check the size of
+#  the system pacct file at @csalocalstatedir@/day/pacct.
+#  If the size is greater than a certain blocks (a block is
+#  1024 bytes), the pacct file is saved off to a differnt
+#  name and a new file is open. This number of blocks can
+#  be specified as the only command argument; when omitted,
+#  the default number should be set to 4000 blocks.
+#
+#  This script also checks the amount of space available for accounting
+#  data.  If there aren't enough blocks free, accounting is turned off
+#  and the admins are notified.  If space frees up, accounting is turned
+#  back on and admins notified.
+#
+# This script is normally run from cron.
+
+# Put @sbindir@ in the front of the path
+PATH=@sbindir@:${PATH}
+
+#
+# Set some variables retrieved from csa...
+#
+
+# Filesystem containing @csalocalstatedir@:
+ACCT_FS=`csagetconfig ACCT_FS`
+# min free blosk in ACCT_FS
+MIN_BLKS=`csagetconfig MIN_BLKS`
+# who to mail - the csa admins
+MAIL_LIST=`csagetconfig MAIL_LIST`
+# what group to chgrp to
+CHGRP=`csagetconfig CHGRP`
+# chmod mask value
+CHMOD=`csagetconfig CHMOD`
+
+#
+# Some variables this script uses
+#
+# Default max blocks
+MAX_PACCT_BLOCKS=4000
+
+# Define the lock file
+LOCKFILE=/tmp/csackpacct.lock
+# tmp direcotry
+TMPDIR=/tmp/csackpacct-tmpdir
+# tmp file for mail/echo
+TMPFILE=/tmp/csackpacct-tmp.$$
+
+# Check for / create lock file.  This should be done before the 
+# trap so a signal doesn't make us remove the lock file when we don't
+# want to.
+if [ -r $LOCKFILE ]
+then
+	# lock file exists, exit 1
+	echo "debug - lock file found, exit 1"
+	exit 1
+else
+	touch $LOCKFILE
+	chmod 400 $LOCKFILE
+fi
+
+#
+# Run cleanup when we get signals:
+# 1,2,3,9,15
+#
+trap cleanup 1 2 3 9 15
+
+#
+# Functions: cleanup
+# Used to cleanup the lock file if we get a signal we want to trap
+#
+function cleanup () {
+	if [ -r $LOCKFILE ]
+	then
+		rm -f $LOCKFILE
+	fi
+	exit
+}
+
+#
+# Main...
+#
+
+# If we were provided a paramter, use that as the MAX_PACCT_BLOCKS instead
+if ! [ -z "$1" ]
+then
+	MAX_PACCT_BLOCKS=$1
+fi
+
+# remove tmpfile if it exists
+rm -f $TMPFILE
+
+cd @csalocalstatedir@/day
+
+# df -P gives output in posix compliant form -- one line
+FREE_BLOCKS=`df -P $ACCT_FS | tail -1`
+# Need only the data line, not the banner w/ descriptions.
+# Get rid of double spaces
+# return only the available field using cut
+FREE_BLOCKS=`echo $FREE_BLOCKS | sed -e 's/  */ /g' | cut -d ' ' -f 2`
+#echo "DBG FREE_BLOCKS: $FREE_BLOCKS, MIN_BLKS: $MIN_BLKS"
+
+if [ $FREE_BLOCKS -lt $MIN_BLKS -a -r $TMPDIR/acctoff ]
+then
+	echo "$ACCT_FS is STILL low on space.  It has only $FREE_BLOCKS available." > $TMPFILE
+	echo "Not enabling CSA until more space is available." >> $TMPFILE
+	cat $TMPFILE
+	Mail -s "CSA STILL running low on space" $MAIL_LIST < $TMPFILE
+	rm -f $TMPFILE
+	rm -f $LOCKFILE
+	exit 1
+elif [ $FREE_BLOCKS -lt $MIN_BLKS ]
+then
+	echo "$ACCT_FS is running low on space.  It has only $FREE_BLOCKS available." > $TMPFILE
+	echo "Turning off CSA until more space is available." >> $TMPFILE
+	cat $TMPFILE
+	Mail -s "CSA running low on space" $MAIL_LIST < $TMPFILE
+	rm -f $TMPFILE
+
+	# create tmpdir if it doesn't exist
+	if ! [ -d $TMPDIR ]
+	then
+		mkdir $TMPDIR
+	fi
+
+	# Change group of directory
+	if [ -z "$CHGRP" ]
+	then
+		echo "CHGRP symbol not reported by CSA.  Will use csaacct group."
+		chgrp csaacct $TMPDIR
+	else
+		chgrp $CHGRP $TMPDIR
+	fi
+
+	# perms of directory
+	if [ -z "$CHMOD" ]
+	then
+		echo "CHMOD symbol not reported by CSA.  Will use 770 as mod value."
+		chmod 770 $TMPDIR
+	else
+		chmod $CHMOD $TMPDIR
+	fi
+	
+	# turn off csa so we don't use disk space
+	@sbindir@/nulladm $TMPDIR/acctoff
+	@sbindir@/csaswitch -c halt
+	rm -f $LOCKFILE
+	exit 1
+fi
+
+# If the temp file exists and free blocks is not less than MIN_BLKS...
+if [ -r $TMPDIR/acctoff ]
+then
+	echo "$ACCT_FS now has some free space." > $TMPFILE
+	echo "re-enabling CSA." >> $TMPFILE
+	cat $TMPFILE
+	Mail -s "CSA re-enabled, space shortage has passed" $MAIL_LIST < $TMPFILE
+	rm -f $TMPFILE
+	# remove teh acctoff semaphore in TMPDIR
+	rm -f $TMPDIR/acctoff
+
+	@sbindir@/csaswitch -c on
+fi
+
+# if CSA was turned off due to kernel error....
+CSAERROR=`@sbindir@/csaswitch -c check -n csa | grep -v "^#" | grep csa | sed -e 's/ *csa *//g'`
+
+if [ "$CSAERROR" = "Error" ]
+then
+	echo "CSA accouting was in the error state." > $TMPFILE
+	echo "re-enabling CSA." >> $TMPFILE
+	cat $TMPFILE
+	Mail -s "CSA was in error, being re-enabled" $MAIL_LIST < $TMPFILE
+	rm -f $TMPFILE
+	
+	@sbindir@/csaswitch -c on
+fi
+
+# If the pacct file is too big, start a new one...
+PACCTSIZE=`du -k @csalocalstatedir@/day/pacct | sed -e 's/[[:space:]].*$//g'`
+#echo "dbg PACCTSIZE: $PACCTSIZE, MAX_PACCT_BLOCKS: $MAX_PACCT_BLOCKS"
+if [ $PACCTSIZE -gt $MAX_PACCT_BLOCKS ]
+then
+	@sbindir@/csaswitch -c switch
+fi
+
+# normal exit, remove lock file.
+rm -f $LOCKFILE
+
+exit 0

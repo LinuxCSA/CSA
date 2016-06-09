@@ -1,0 +1,104 @@
+November 7, 2007
+
+This document describes how to build and install the Linux CSA 
+job accounting commands package from source.  This package
+uses an autoconf configure script and needs a GNU build
+environment which includes autoconf and gmake.
+
+This package has compile dependencies upon header files installed
+as part of the Linux job daemon package.  Please read the README
+file at http://www.oss.sgi.com/projects/csa to have your system
+set up correctly before attempting to build the CSA commands.
+
+  1)  ./configure
+
+  2)  make
+
+  3)  su root
+
+  4)  make install
+
+See the "Comprehensive System Accounting for Linux" manual for
+instructions on how to configure CSA to meet your site's needs
+and how to start CSA.  The csa man page gives a summary of
+the steps needed to start using CSA.
+
+The following files will be installed and directories created:
+
+files:
+======
+/etc/csa.conf
+/etc/csa.holidays
+/etc/init.d/csa
+/usr/include/csa.h
+/usr/include/csa_delay.h
+/usr/include/csa_api.h
+/usr/include/csaacct.h
+/usr/lib[64]/libcsa.la
+/usr/lib[64]/libcsa.so*
+/usr/lib[64]/libcsad.la
+/usr/lib[64]/libcsad.so*
+/usr/bin/ja
+/usr/bin/csacom
+/usr/sbin/acctdisk
+/usr/sbin/acctdusg
+/usr/sbin/csaaddc
+/usr/sbin/csabuild
+/usr/sbin/csachargefee
+/usr/sbin/csacms
+/usr/sbin/csacon
+/usr/sbin/csacrep
+/usr/sbin/csadrep
+/usr/sbin/csaedit
+/usr/sbin/csagetconfig
+/usr/sbin/csajrep
+/usr/sbin/csarecy
+/usr/sbin/csaswitch
+/usr/sbin/csaverify
+/usr/sbin/csackpacct
+/usr/sbin/csaperiod
+/usr/sbin/csarun
+/usr/sbin/dodisk
+/usr/sbin/lastlogin
+/usr/sbin/nulladm
+/var/csa/nite/statefile
+
+directories:
+============
+/var/csa
+/var/csa/day
+/var/csa/fiscal
+/var/csa/nite
+/var/csa/sum
+/var/csa/work
+
+man pages:
+==========
+/usr/man/man1/csacom.1
+/usr/man/man1/ja.1
+/usr/man/man8/acctdisk.8
+/usr/man/man8/acctdusg.8
+/usr/man/man8/csa.8
+/usr/man/man8/csaaddc.8
+/usr/man/man8/csabuild.8
+/usr/man/man8/csachargefee.8
+/usr/man/man8/csackpacct.8
+/usr/man/man8/csacms.8
+/usr/man/man8/csacon.8
+/usr/man/man8/csacrep.8
+/usr/man/man8/csadrep.8
+/usr/man/man8/csaedit.8
+/usr/man/man8/csagetconfig.8
+/usr/man/man8/csajrep.8
+/usr/man/man8/csaperiod.8
+/usr/man/man8/csarecy.8
+/usr/man/man8/csarun.8
+/usr/man/man8/csaswitch.8
+/usr/man/man8/csaverify.8
+/usr/man/man8/disusg.8
+/usr/man/man8/dodisk.8
+/usr/man/man8/lastlogin.8
+/usr/man/man8/nulladm.8
+
+other documentation:
+/usr/share/doc/packages/csa AUTHORS COPYING INSTALL ChangeLog NEWS README 
