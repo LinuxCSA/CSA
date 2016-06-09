@@ -22,4 +22,4 @@ While the Linux kernel itself monitors the size of the accounting records file (
 Linux CSA is the outcome of a joint effort between Los Alamos National Laboratory (LANL) and SGI to port the IRIX CSA tool to the Linux Operating System. This project is a community driven fork of that code base and is not supported by either organization.
 
 ### More Info
-For additional information and instructions on proper usage, please visit our  [Wiki](https://github.com/LinuxCSA/CSA/wiki).
+For additional information and instructions on proper usage, please visit the  [Wiki](https://github.com/LinuxCSA/CSA/wiki).
