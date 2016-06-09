@@ -124,5 +124,5 @@ A simple test program to sanity check some aspects of the jobs package.
 
 %changelog
 * Wed Jun  8 2016 Jay Lan <jay.j.lan@nasa.gov>
-  - Converted job package from SGI-supported version 2.0.1 to community
-    version 3.0.0
+  - Converted job package from the last SGI-supported version 2.0.1 to
+    community version 3.0.0

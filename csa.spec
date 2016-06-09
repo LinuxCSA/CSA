@@ -170,5 +170,5 @@ A simple test suite to sanity check some aspects of the csa package.
 
 %changelog
 * Wed Jun  8 2016 Jay Lan <jay.j.lan@nasa.gov>
-  - Converted csa package from SGI-supported version 4.1.1 to community
-    version 5.0.0
+  - Converted csa package from the last SGI-supported version 4.1.1 to
+    community version 5.0.0
