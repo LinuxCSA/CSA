@@ -1,3 +1,7 @@
+* Wed Jun  8 2016 Jay Lan <jay.j.lan@nasa.gov>
+- Converted csa package from the last SGI-supported version 4.1.1 to
+  community version 5.0.0
+
 * Fri Oct 17 2008 Jonathan Lim <jlim@sgi.com>
 - csa-4.1.1
 - Various fixes to allow for SLES11 build

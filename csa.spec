@@ -170,5 +170,99 @@ A simple test suite to sanity check some aspects of the csa package.
 
 %changelog
 * Wed Jun  8 2016 Jay Lan <jay.j.lan@nasa.gov>
-  - Converted csa package from the last SGI-supported version 4.1.1 to
-    community version 5.0.0
+- Converted csa package from the last SGI-supported version 4.1.1 to
+  community version 5.0.0
+
+* Fri Apr 27 2007 Jay Lan <jlan@sgi.com>
+* Mon Apr 30 2007 Jonathan Lim <jlim@sgi.com>
+- csa-3.0.2
+- SBU's data was all zero in csa-3.0.0 and csa-3.0.1
+- Clarify csacom(1) man page on '-f' option
+- Obsolete csacom '-a' & '-q' option
+- Fix a problem of csadrep reading input from a binary file
+- Fixed csadrep(8) man page: replaced '-w' with '-n' and removed '-t'
+
+* Wed Jul 5 2006 Jay Lan <jlan@sgi.com>
+- csa-3.0.1
+- 'csacom -b' was broken in csa-3.0.0
+- 'csacom -b' drops the last record of a pacct file
+
+* Thu Feb 24 2006 Jay Lan <jlan@sgi.com>
+- csa-3.0.0
+- csacom -[esES] option was broken.
+- create /usr/sbin/rccsa symlink at %install in the spec file
+- remove code for CSA record types not supported in Linux
+- spliting up csa_kern.h into kernel version and userland version
+- support pacct files created in csa-2.x.x
+- incompatible with csa-2.x.x releases. User appls need recompilation.
+- needs csa_module kernel module of 2.6.16.21.
+
+* Wed Jul 27 2005 Chris Sturtivant <csturtiv@sgi.com>
+- csa-2.2.2
+- Disabled perror for permission denied in csa_ctl when called by csa_auth
+
+* Mon May 2 2005 Jay Lan <jlan@sgi.com>
+- csa-2.2.1
+- clean up csa init script
+- csa_wracct(3) man page update
+- 'csacom -o' wrote only one record
+- 'csacom -b' does not work
+- csajrep man page references invalid option '-W'
+- 'csajrep -r' does not work
+- 'dodisk' created files with incorrect user and group name 'adm'
+- CSA does not handle gid's > 65535
+- 'csacom -j' failed if job id greater than max value of an int
+
+* Fri Mar 25 2005 Jay Lan <jlan@sgi.com>
+- csa-2.1.5 (final release to support 2.4 kernels)
+- 'csacom -o' wrote only one record
+- 'csacom -b' does not work
+- csajrep man page references invalid option '-W'
+- 'csajrep -r' does not work
+
+* Wed Jan 12 2005 Jay Lan <jlan@sgi.com>
+- csa-2.1.4
+- csa_wracct(3) man page update
+
+* Fri Dec 17 2004 Jay Lan <jlan@sgi.com>
+- csa-2.1.3
+- csacom & csacms usage otuput missing carriage return
+- csarecy misses a carriage return on certain condition
+- csacom -W segfaults after printing one bad time
+- clean up csa init script
+
+* Mon Nov 22 2004 Jay Lan <jlan@sgi.com>
+- csa-2.2.0
+- Fixed compilation issue with gcc 3.3.3
+- CSA assumes existence of 'adm' user/group account
+- csacom & csacms usage otuput missing carriage return
+- csarecy misses a carriage return on certain condition
+- csacom -W segfaults after printing one bad time
+
+* Fri Oct 8 2004 Jay Lan <jlan@sgi.com>
+- csa-2.1.2
+- Fixed 'csaswitch -c halt' bug
+- Fixed 'csaedit dumped core on bad wkmg record' bug
+
+* Tue Jul 27 2004 Jay Lan <jlan@sgi.com>
+- csa-2.1.1
+- Remove static API library libcsa.a from rpm package
+- Fixed a bug at csacom with invalid -u option
+- cascom headers and data not aligned correctly at output
+
+* Wed Jun 30 2004 Jay Lan <jlan@sgi.com>
+- csa-2.1.0
+- Fixed a problem dealing with accounting files > 2GB
+- Now derives "Day of Year" from other fields of the holidays file
+- Removed "Pages Swapped" from csacom and csacms - not supported in Linux
+- Fixed a bug of not mapping UID 0 to root
+
+* Tue Feb 17 2004 Jay Lan <jlan@sgi.com>
+- csa-2.0.0
+- Implemented /proc ioctl interface
+- Renamed rpm from csa-job-acct to csa
+- Renamed /etc/init.d/csaacct to /etc/init.d/csa
+
+* Fri Nov 7 2003 Jay Lan <jlan@sgi.com>
+- csa-job-acct-2.0.0
+- Provided API library libcsa.so and associated header file

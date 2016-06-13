@@ -1,31 +1,40 @@
-job-pagg-0.7.0 (available December 15, 2000)
-	- initial Job Container and Process Aggregation interface
-	  open source release.
+* Wed Jun  8 2016 Jay Lan <jay.j.lan@nasa.gov>
+- Converted job package from the last SGI-supported version 2.0.1 to
+  community version 3.0.0
 
-job-pagg-1.0.0 (available Feb 15, 2001)
-	- Kernel module changed to kernel patch (can build as built-in or 
-	  as a module.
-	- Added two new commands: jsethid & jdetach.
-		* jsethid: admin command used to set the Host ID (hid) 
-		  	   for jid generation.
-		* jclean: allows a single process in a job, or all processes
-			  in a job to be detached from a job. Need to be 
-			  root or have CAP_SYS_RESOURCE capability to
-			  execute this command.
-	- Cleaned up the job user commands package build process to 
-	  allow it to be packaged via RPM.
+* Mon Apr 30 2007 Jonathan Lim <jlim@sgi.com>
+- job-2.0.1
+- Fixed capabilities memory leak in jobd.
 
-job-pagg-1.4.0 
- - Job library made available and should be used in place of jobctl.
-   This allows the implementation of how job communicates with pagg to 
-   change without having to re-code applications that make use of job.
+* Fri Jul 21 2006 Jonathan Lim <jlim@sgi.com>
+- job-2.0.0
+- Job kernel functionality implemented as a userspace daemon.
+  The daemon receives process creation notification from the kernel via a
+  generic netlink socket.  Process exits are communicated similarly, or
+  through a socket from the CSA daemon (Comprehensive System Accounting)
+  if enabled.  Job commands also communicate with the daemon via socket.
 
-job-2.0.0
- - Job kernel functionality implemented as a userspace daemon.
-   The daemon receives process creation notification from the kernel via a
-   generic netlink socket.  Process exits are communicated similarly, or
-   through a socket from the CSA daemon (Comprehensive System Accounting)
-   if enabled.  Job commands also communicate with the daemon via socket.
+* Fri Nov 7 2003 Erik Jacobson <erikj@sgi.com>
+- job-pagg-1.4.0
+- Job library made available and should be used in place of jobctl.
+  This allows the implementation of how job communicates with pagg to 
+  change without having to re-code applications that make use of job.
 
-job-2.0.1
- - Fixed capabilities memory leak in jobd.
+* Thu Feb 15 2001 Sam Watters <watters@sgi.com>
+- job-pagg-1.0.0 (available Feb 15, 2001)
+- Kernel module changed to kernel patch (can build as built-in or 
+  as a module.
+- Added two new commands: jsethid & jdetach.
+  * jsethid: admin command used to set the Host ID (hid) 
+    for jid generation.
+  * jclean: allows a single process in a job, or all processes
+    in a job to be detached from a job. Need to be 
+    root or have CAP_SYS_RESOURCE capability to
+    execute this command.
+- Cleaned up the job user commands package build process to 
+  allow it to be packaged via RPM.
+
+* Fri Dec 15 2000 Sam Watters <watters@sgi.com>
+- job-pagg-0.7.0 (available December 15, 2000)
+- initial Job Container and Process Aggregation interface
+  open source release.
