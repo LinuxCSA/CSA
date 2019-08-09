@@ -3,7 +3,7 @@
 #
 
 Name: job
-Version: 3.0.0
+Version: 3.0.1
 Release: 1
 Summary: Commands, init scripts, libraries and PAM module for using Linux Jobs
 Source0: %{name}-%{version}.tar.bz2

@@ -2,8 +2,8 @@
 # linuxcsa top level Makefile
 #
 
-CSA_VERSION=5.0.0
-JOB_VERSION=3.0.0
+CSA_VERSION=5.0.1
+JOB_VERSION=3.0.1
 
 LIBDIR=/usr/lib64
 
@@ -19,7 +19,7 @@ job::
 	./configure --prefix=/usr --libdir=$(LIBDIR) --sysconfdir=/etc --mandir=/usr/share/man;			\
 	make
 
-csa::
+csa:: job
 	cd csa;				\
 	if [ -a /usr/share/gettext/config.rpath ] ; \
 	then \
