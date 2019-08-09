@@ -66,6 +66,9 @@ struct queue {
 struct proc_entry {
 	pid_t			pid;	   /* process ID */
 	int			status;	   /* exit status of process */ 
+	int			proc_exited;	   /* process has exited */ 
+	time_t			time_exited;	   /* process exit time */ 
+	int			saved_status;	   /* saved exit status of process */ 
 	struct job_entry	*job;	   /* Pointer to associated job */
 	struct links		jobprocs;   /* More processes in this job */
 	struct links		hashlist;   /* More processes - same hash */

@@ -42,7 +42,7 @@
  */
 #include <sys/capability.h>
 
-#define CSAD_DEBUG
+/* #define CSAD_DEBUG */
 /* #define CSAD_DEBUG_STDERR */
 
 #ifdef CSAD_DEBUG
@@ -128,6 +128,7 @@ send_sk_job(int sk, struct proc_exit *msg)
 	else
 	    PRINTF(LOG_ERR, "send_sk_job: short write: %d bytes", sz);
     }
+    PRINTF(LOG_INFO, "CSA telling JOB that pid %d exited", msg->pid);
 
     return;
 }

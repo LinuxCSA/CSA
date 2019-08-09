@@ -1,3 +1,6 @@
+* Tue May 30 2017 Jay Lan <jay.j.lan@nasa.gov>
+- Fixed an issue that csad and jobd sometimes get out of sync.
+
 * Wed Jun  8 2016 Jay Lan <jay.j.lan@nasa.gov>
 - Converted job package from the last SGI-supported version 2.0.1 to
   community version 3.0.0

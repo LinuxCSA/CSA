@@ -137,4 +137,17 @@ dnl Checks for internationalization support
 ALL_LINGUAS=""
 AM_GNU_GETTEXT
 
+dnl In the intl/Makefile.in we have a special dependency which makes
+dnl sense only for gettext.  We comment this out for non-gettext
+dnl packages.
+if test "$PACKAGE" = "gettext"; then
+	GT_NO="#NO#"
+	GT_YES=
+else
+	GT_NO=
+	GT_YES="#YES#"
+fi
+AC_SUBST(GT_NO)
+AC_SUBST(GT_YES)
+
 AC_OUTPUT(include/Makefile lib/Makefile cmd/csabuild/Makefile cmd/ja/Makefile cmd/Makefile tests/Makefile man/Makefile man/man3/Makefile Makefile intl/Makefile intl/po2tbl.sed po/Makefile.in csad/Makefile)

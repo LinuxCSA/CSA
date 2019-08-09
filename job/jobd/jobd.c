@@ -68,6 +68,7 @@
 #undef _POSIX_SOURCE
 #include <sys/capability.h>
 
+/* #define DEBUG_JOBD 1 */
 #ifdef DEBUG_JOBD
 #ifdef DEBUG_JOBD_STDERR
 #define JOBD_DEBUG(args...)	fprintf(stderr, args);fprintf(stderr,"\n");
@@ -299,6 +300,7 @@ static void fork_handler(int ppid, int cpid)
 {
 	struct proc_entry *child;	/* the child */
 	struct proc_entry *parent;	/* the parent */
+	struct proc_entry *proc;
 
 	/* 
 	 * we check if the parent is already registered in the jobs 
@@ -310,7 +312,9 @@ static void fork_handler(int ppid, int cpid)
 		return;
 	}
 
+/*
 	JOBD_DEBUG("[fork_handler] pid %d is in a job", ppid);
+*/
 
 	/* create and add a new entry in the hash table */
 	child = (struct proc_entry *) calloc(1, sizeof(struct proc_entry));
@@ -320,11 +324,28 @@ static void fork_handler(int ppid, int cpid)
 	}
 
 	/* sanity check */
-	if (findproc(cpid)) {
+	proc = findproc(cpid);
+	if (proc) {
 		/* We're in deep doo-doo! */
-		syslog(LOG_ERR, "%d already exists.  Did we wrap pids?", cpid);
-		JOBD_DEBUG("[fork_handler] pid %d already exists, but it shouldn't!", cpid);
-		return;
+		JOBD_DEBUG("[fork_handler] HELP - pid %d already exists, but it shouldn't!", cpid);
+		/* If jobd has set proc_exited, that means that csa dropped 
+		 * the ball wrt reporting the process exit to us. So we use 
+		 * the saved_status to close out the old proc, then we can 
+		 * register the new proc like normal.
+		 */
+		if (proc->proc_exited) {
+			JOBD_DEBUG("[fork_handler] HELP - JOB saw pid %d exit with status %d at %s", cpid, proc->saved_status, ctime(&(proc->time_exited)));
+			JOBD_DEBUG("[fork_handler] cleaning up pid %d.", cpid);
+			exit_handler(cpid, proc->saved_status);
+			/* Make sure it's really gone. */
+			proc = findproc(cpid);
+			if (proc) {	/* The sky is falling! */
+				JOBD_DEBUG("[fork_handler] exit_handler failed for pid %d. Why?", cpid);
+			}
+		} else {
+			JOBD_DEBUG("%d already exists.  Did we wrap pids?", cpid);
+			return;
+		}
 	}
 
 	/* Initialize proc entry values */
@@ -362,7 +383,9 @@ static void exit_handler(int pid, int status)
 		return;
 	}
 
+/*
 	JOBD_DEBUG("[exit_handler] pid %d is in a job", pid);
+*/
 
 	/* save status, in case we need it later */
 	proc->status = status;
@@ -1328,6 +1351,7 @@ static void recv_sk_nl(int sk)
 	struct nlmsghdr *hdr;
 	struct cn_msg *msg;
 	struct proc_event *ev;
+	struct proc_entry *proc;
 	int len;
 	int cpuid;
 	int ppid;
@@ -1360,22 +1384,18 @@ static void recv_sk_nl(int sk)
 			ptgid = ev->event_data.fork.parent_tgid;
 			cpid  = ev->event_data.fork.child_pid;
 			ctgid = ev->event_data.fork.child_tgid;
+
+/*
+JOBD_DEBUG("FORK - %d %d", ppid, cpid);
+*/
+/*
 			JOBD_DEBUG("[seq#%d] %d %d - %d %d",
 			    msg->seq, ppid, ptgid, cpid, ctgid);
+*/
 			fork_handler(ppid, cpid);
 		} else if (ev->what == PROC_EVENT_EXIT) {
-#ifdef CSA
-			if (CSA_is_active) {
-				/* 
-				 * We'll get exit notification 
-				 * from CSA instead of here. 
-				 */
-				break;
-			}
-#endif
 			cpuid = ev->cpu;
 			ppid  = ev->event_data.exit.process_pid;
-			ptgid = ev->event_data.exit.process_tgid;
 			ptgid = ev->event_data.exit.process_tgid;
 /* 
  * NOTE - Everything is returned in ev->event_data.exit.exit_code.
@@ -1388,8 +1408,31 @@ static void recv_sk_nl(int sk)
 */
 			status = ev->event_data.exit.exit_code;
 
-			JOBD_DEBUG("[seq#%d] %d %d",
-			    msg->seq, ppid, ptgid);
+/*
+			JOBD_DEBUG("[recv_sk_nl] JOB saw pid %d exit", ppid);
+*/
+
+/* 
+ * The following is a sanity check to help protect jobd from being 
+ * affected by bugs/failures in csa. We save the proc's exit status.
+ * If csa fails to report this process exit to us, we'll still have 
+ * the info we need to do it ourself.
+ */
+			proc = findproc(ppid);
+			if ((proc) && (proc->pid == ppid)) {
+				proc->proc_exited = 1;
+				proc->time_exited = time(NULL);
+				proc->saved_status = status;
+			}
+#ifdef CSA
+			if (CSA_is_active) {
+				/* 
+				 * We'll get exit notification 
+				 * from CSA instead of here. 
+				 */
+				break;
+			}
+#endif
 			exit_handler(ppid, status);
 		}
 		break;
@@ -1462,7 +1505,9 @@ static void recv_sk_unix(int sk)
 		cr.pid = cr.uid = cr.gid = (~0);
 		info.priv = 0;
 	}
+/*
 	JOBD_DEBUG("[recv_sk_unix] Peer's pid=%d, uid=%d, gid=%d", cr.pid, cr.uid, cr.gid);
+*/
 
 	sz = read(fromfd, &mesg, sizeof(struct job_hdr));
 	if (sz != sizeof(struct job_hdr)) {
@@ -1566,6 +1611,9 @@ static void recv_sk_csa(int sk)
 		}
 		return;
 	}
+/*
+	JOBD_DEBUG("[recv_sk_csa] CSA says pid %d exited", msg.pid);
+*/
 
 	exit_handler(msg.pid, msg.exitstat);
 

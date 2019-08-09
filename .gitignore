@@ -1,0 +1,16 @@
+*.bz2
+*/*.spec
+*/config.guess
+*/config.h.in
+*/config.log
+*/config.sub
+*/configure
+*/install-sh
+*/missing
+job/ltmain.sh
+job/sgi-job.feature
+*/aclocal.m4
+*/autom4te.cache/
+*/Makefile.in
+*/*/Makefile.in
+*/*/*/Makefile.in
