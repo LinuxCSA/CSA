@@ -137,6 +137,7 @@ void usage ()
 }
 
 
+int
 main (int argc, char **argv)
 {
     extern char  *optarg;

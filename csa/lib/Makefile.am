@@ -50,7 +50,7 @@ libacct_a_SOURCES = \
 
 libacct_a_DEPENDENCIES = @top_srcdir@/include/acctdef.h
 
-INCLUDES = -I@top_srcdir@/include -D__USE_GNU -Dlinux
+AM_CPPFLAGS = -I@top_srcdir@/include -D__USE_GNU -Dlinux
 
 libcsa_la_SOURCES = csa_api.c
 

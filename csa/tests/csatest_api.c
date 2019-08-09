@@ -683,7 +683,7 @@ int do_wracct() {
 }
 
 
-
+int
 main(int argc, char **argv)
 {
 	int retval = 0;

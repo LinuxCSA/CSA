@@ -121,3 +121,4 @@ extern	void	printsumhdr();
 extern	void	rpt_nqs();
 extern	void	rpt_process();
 extern	void	rpt_tape();
+extern	void	makeflwt(struct acctcsa *);		/* flow.c */

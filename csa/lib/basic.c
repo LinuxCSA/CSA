@@ -28,6 +28,7 @@
 
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <fcntl.h>
 
 #ifdef HAVE_MAC_H
 #include <sys/mac.h>

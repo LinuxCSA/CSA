@@ -2,7 +2,7 @@
 # linuxcsa top level Makefile
 #
 
-CSA_VERSION=5.0.1
+CSA_VERSION=5.0.2
 JOB_VERSION=3.0.1
 
 LIBDIR=/usr/lib64

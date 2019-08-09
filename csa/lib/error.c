@@ -35,6 +35,7 @@
 #include <stdarg.h>
 #include <nl_types.h>
 #include <string.h>
+#include <ctype.h>
 
 #include "acctmsg.h"
 
@@ -106,7 +107,7 @@ msg_printable(char *msg)
 	c = msg;
 	cerr_cnt = 0;
 	char_cnt = 0;
-	while (*c != (char)NULL) {
+	while (*c != '\0') {
 	    char_cnt++;
 
 /*

@@ -51,6 +51,7 @@
 #include <malloc.h>
 #include <errno.h>
 #include <stdarg.h>
+#include <unistd.h>
 
 #include "csa_conf.h"
 #include "acctmsg.h"
@@ -65,6 +66,7 @@ static char	resp_string[4096];	/* configfile value assoc w/ token */
 
 static char	*__getent__();
 static FILE	*__openfile__();
+static int	__get_config();
 
 static int	config_size;		/* size of configuration file */
 static char	*config_data;		/* configuration file contents */
@@ -119,7 +121,7 @@ config(char *param)
  *		on it.
  *	Read the file into memory, then close the file.
  */
-int
+static int
 __get_config() {
 	int		fd;
 	char		config_file[4096];
@@ -211,12 +213,12 @@ __getline__(char *buf, int size)
 			continue;
 		}
 		if (len >= size)
-			return((int)NULL);
+			return(0);
 		memcpy(buf, &config_data[config_offset], len + 1);
 		config_offset += len + 1;
 		return((int)1);
 	}
-	return((int)NULL);
+	return(0);
 }
 
 /*
@@ -246,7 +248,7 @@ __getent__(char *name, FILE *fd)
 	 *	Scan each line.
 	 */
 	line = config_offset = 0;
-	while (__getline__(parambuf, __PARAMSIZ__) != (int)NULL) {
+	while (__getline__(parambuf, __PARAMSIZ__) != 0) {
 
 		/*
 		 *	Get rid of the newline if necessary.

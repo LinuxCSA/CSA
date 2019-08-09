@@ -238,6 +238,7 @@ void usage()
     	Prg_name, Prg_name, Prg_name, Prg_name);
 }
 
+int
 main(int argc, char **argv)
 {
     struct stat	stbuf;

@@ -741,14 +741,14 @@ writeacctent(int fd, struct acctent *acctrec)
  *
  */
 #define MAKE_F_READ(PROC,TYPE)						\
-	PROC (int fd, TYPE *buffer) {                                   \
+	int PROC (int fd, TYPE *buffer) {				\
 		char    *FUNC_NAME="PROC ()";				\
 									\
 		FIXD_READ (fd, buffer, sizeof (TYPE));			\
 		return (sizeof (TYPE));					\
 	}
 #define	MAKE_V_READ(PROC,TYPE,CONV)					\
-	PROC (int fd, TYPE *buffer) {					\
+	int PROC (int fd, TYPE *buffer) {				\
 		int	i;						\
 		char	*FUNC_NAME="PROC ()";				\
 									\
@@ -757,7 +757,7 @@ writeacctent(int fd, struct acctent *acctrec)
 	}
 
 #define	MAKE_U_READ(PROC,UNION,CONV)					\
-	PROC (int fd, UNION *buffer) {					\
+	int PROC (int fd, UNION *buffer) {				\
 		int	i;						\
 		char	*FUNC_NAME="PROC ()";				\
 									\
@@ -768,14 +768,14 @@ writeacctent(int fd, struct acctent *acctrec)
 	}
 
 #define	MAKE_WRITE(PROC,TYPE)						\
-	PROC (int fd, TYPE *buffer) {					\
+	int PROC (int fd, TYPE *buffer) {				\
 		char	*FUNC_NAME="PROC ()";				\
 									\
 		FIXD_WRITE (fd, buffer, sizeof (TYPE));			\
 		return (sizeof (TYPE));					\
 	}
 #define	MAKE_U_WRITE(PROC,UNION)					\
-	PROC (int fd, UNION *buffer) {					\
+	int PROC (int fd, UNION *buffer) {				\
 		struct	achead	*HEAD;					\
 		char	*FUNC_NAME="PROC ()";				\
 									\

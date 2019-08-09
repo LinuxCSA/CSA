@@ -1,3 +1,5 @@
+.pc
+*/.pc
 *.bz2
 */*.spec
 */config.guess

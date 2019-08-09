@@ -276,6 +276,7 @@ void usage()
 
 char	*optstring = "ABbceFhJj:LNp:qr:Ss:Ttu:VwxZ";
 
+int
 main(int argc, char **argv)
 {
     char	ch;

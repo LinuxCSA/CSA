@@ -27,6 +27,7 @@
 #include <errno.h>
 #include <sys/stat.h>
 #include <sys/un.h>
+#include <sys/file.h>
 #include <asm/types.h>
 #include <linux/taskstats.h>
 #include "csa.h"
@@ -78,6 +79,11 @@ static int init_csa(void);
 static void cleanup_csa(void);
 int run_csa_daemon(void *gj);
 void end_csa_daemon(int unused);
+void csa_acct_eop(struct taskstats *);
+
+extern int csa_jstart(struct csa_job *);
+extern int csa_jexit(struct csa_job *);
+extern int csa_doctl(pid_t, cap_t, unsigned int, unsigned long);
 
 #define CSAD_LOCKFILE "/var/run/csad/lock"
 #define MASK_LEN 4096  /* size of resp_string in lib/config.c */
@@ -172,7 +178,8 @@ static void
 process_mesg(struct mesg_info *info)
 {
     info->hdr.err =
-	csa_doctl(info->pid, info->cap_p, info->hdr.req, info->data);
+	csa_doctl(info->pid, info->cap_p, info->hdr.req,
+		(unsigned long)info->data);
 
     send_reply(info);
 

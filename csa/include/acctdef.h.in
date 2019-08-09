@@ -371,6 +371,7 @@ double	init_real(char *, double, int);			/* init_val.c */
 
 gid_t	name_to_gid(char *);				/* name_to_gid.c */
 uint64_t name_to_prid(char *);				/* name_to_prid.c */
+uint64_t getdfltprojuser(const char *);			/* name_to_prid.c */
 
 double	process_sbu(struct acctent *);			/* sbu.c */
 double	wm_sbu(struct wkmgmtbs *);			/* sbu.c */
@@ -381,5 +382,7 @@ hdr_retval check_hdr2(struct achead *, char *, int, int);	/* valid.c */
 invalid_retval invalid_pacct(struct acctent *, char *);		/* valid.c */
 invalid_retval invalid_wm(struct wkmgmtbs *, char *);		/* valid.c */
 invalid_retval invalid_cwm(struct wkmgmtbs *, char *);		/* valid.c */
+
+void pop_calc(time_t, time_t, time_t *);		/* peak_offpeak.c */
 
 #endif	/* _ACCTDEF_H */

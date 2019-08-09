@@ -62,6 +62,7 @@ char	*Prg_name;
 /*
  *	csabuild (main) routine.
  */
+int
 main(int argc, char **argv)
 {
 	long	hz;

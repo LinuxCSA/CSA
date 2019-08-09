@@ -106,6 +106,7 @@ void usage()
 /*
  *  Main program.
  */
+int
 main (int argc, char **argv)
 {
     extern char  *optarg;

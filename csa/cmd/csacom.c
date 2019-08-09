@@ -33,6 +33,7 @@
 #include <grp.h>
 #include <unistd.h>
 #include <sys/types.h>
+#include <ctype.h>
 
 #include <linux/acct.h>
 

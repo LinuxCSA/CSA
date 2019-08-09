@@ -64,6 +64,8 @@
 #include <sys/types.h>
 #include <sys/utsname.h>
 #include <sys/resource.h>
+#include <fcntl.h>
+#include <unistd.h>
 /*
  *  sys/capability.h in libcap-devel-1.10-26 (RHEL5.1)
  *  prevents linux/types.h from being included.
@@ -71,7 +73,7 @@
  */
 #include <linux/types.h>
 #include <sys/capability.h>
-#include <asm/fcntl.h>
+/* #include <asm/fcntl.h> */
 #include <linux/acct.h>
 #include <linux/taskstats.h>
 #include "csa.h"

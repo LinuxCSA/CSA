@@ -60,6 +60,7 @@ void usage()
 		Prg_name);
 }
 
+int
 main(int argc, char **argv)
 {
 	char	cname[4096];

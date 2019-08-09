@@ -83,7 +83,7 @@ csarecy_DEPENDENCIES      = @top_srcdir@/include/acctdef.h @top_srcdir@/lib/liba
 csaswitch_DEPENDENCIES    = @top_srcdir@/include/acctdef.h @top_srcdir@/lib/libacct.a @top_srcdir@/lib/libcsa.la
 csaverify_DEPENDENCIES    = @top_srcdir@/include/acctdef.h @top_srcdir@/lib/libacct.a
 
-INCLUDES = -I@top_srcdir@/include -D__USE_GNU -Dlinux
+AM_CPPFLAGS = -I@top_srcdir@/include -D__USE_GNU -Dlinux
 
 acctdisk_LDADD	= @top_srcdir@/lib/libacct.a
 acctdusg_LDADD	= @top_srcdir@/lib/libacct.a

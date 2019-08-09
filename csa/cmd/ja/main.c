@@ -81,11 +81,13 @@ int	t_Nsite = 0;		/* number of SITE records found */
 
 static	int	getacctent(int ***);
 static	void	init_config();
+extern	int	init(int, char **);
 
 
 /*
  *	ja(main) routine.
  */
+int
 main(int argc, char **argv)
 {
 	int	file_exists;

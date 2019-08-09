@@ -104,5 +104,6 @@ int	process_eop(int, int, int);				/* process.c */
 int	process_special(int, int, int);				/* special.c */
 int	process_wm(int, int);					/* wkmgmt.c */
 void	Shift_uptime(int, char *, int);				/* build.c */
+void	add_segs_wm();						/* wkmgmt.c */
 
 int	upcmp(const void *, const void *);			/* xxx.c */

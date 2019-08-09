@@ -77,6 +77,8 @@ char	fname[MAX_FNAME];	/* job accounting file name */
 int	temp_file = FALSE;	/* temp file used if TRUE */
 int	**marks;		/* file position markers */
 
+int	skipja(int);
+
 #ifdef HAVE_REGCOMP
 regex_t **names;
 #else	/* HAVE_REGCOMP */

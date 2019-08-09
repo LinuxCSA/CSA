@@ -108,7 +108,7 @@ void usage()
     	Prg_name);
 }
 
-cmp(const void *e1, const void *e2)
+int cmp(const void *e1, const void *e2)
 {
     struct cacct  *c1;
     struct cacct  *c2;
@@ -132,6 +132,7 @@ cmp(const void *e1, const void *e2)
     }
 }
 
+int
 main(int argc, char **argv) 
 {
     int           c;

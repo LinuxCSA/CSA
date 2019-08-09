@@ -1291,6 +1291,7 @@ typedef enum
 /*****************************************************************************
  *	MAIN PROGRAM
  *****************************************************************************/
+int
 main(int argc, char **argv)
 {
 /* XXXX this needs to change for Linux security syntax */
@@ -1622,7 +1623,7 @@ main(int argc, char **argv)
  *	old_capset structure.   XXXXX Needs to be changed to Linux syntax.
  */
 #ifdef HAVE_LIBCAP
-    if (cap_set_proc(old_capset) == (int)NULL) {
+    if (cap_set_proc(old_capset) == 0) {
 	    acct_perr(ACCT_ABORT, errno,
 		    _("Unable to revert to original capabilities"));
     }

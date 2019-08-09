@@ -129,7 +129,7 @@ makeflwt(struct acctcsa *csa)
  *	printflwhdr() - Print command flow report header.
  */
 void
-printflwhdr(l_opt)
+printflwhdr(int l_opt)
 {
 	printf("\n\nJob Accounting - Command Flow Report\n");
 	printf("====================================\n\n");

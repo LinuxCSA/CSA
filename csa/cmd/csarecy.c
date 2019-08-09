@@ -150,6 +150,7 @@ Dump_acct_hdr(struct achead *hdr)
 /*
  *	main() - main program including parameter processing and main loop.
  */
+int
 main(int argc, char **argv)
 {
 	char		ch;

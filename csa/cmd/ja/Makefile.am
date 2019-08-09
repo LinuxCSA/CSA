@@ -34,7 +34,7 @@ ja_SOURCES = flow.c \
 ja_DEPENDENCIES = @top_srcdir@/include/acctdef.h @top_srcdir@/lib/libacct.a \
 		@top_srcdir@/lib/libcsa.la
 
-INCLUDES = -I@top_srcdir@/include -D__USE_GNU -D linux
+AM_CPPFLAGS = -I@top_srcdir@/include -D__USE_GNU -D linux
 LIBS = @top_srcdir@/lib/libacct.a @top_srcdir@/lib/libcsa.la
 AM_LDFLAGS = -lm -ljob
 

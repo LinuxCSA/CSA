@@ -27,6 +27,7 @@
 #include <getopt.h> // use GNU's version of getopt 
 
 #include <linux/acct.h>
+#include <ctype.h>
 
 #include "acctdef.h"
 #include "acctmsg.h"

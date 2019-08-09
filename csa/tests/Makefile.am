@@ -38,7 +38,7 @@ testbin_SCRIPTS = csa_ja_cpu.ks		\
 csatest_api_DEPENDENCIES = @top_srcdir@/include/acctdef.h \
 		@top_srcdir@/lib/libacct.a @top_srcdir@/lib/libcsa.la
 
-INCLUDES = -I@top_srcdir@/include -D__USE_GNU -Dlinux
+AM_CPPFLAGS = -I@top_srcdir@/include -D__USE_GNU -Dlinux
 LIBS = @top_srcdir@/lib/libacct.a @top_srcdir@/lib/libcsa.la
 AM_LDFLAGS= -ljob
 

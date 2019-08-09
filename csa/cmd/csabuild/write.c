@@ -72,6 +72,7 @@ int	sfd;			/* Sorted pacct file descriptor */
 struct	acctjob	Job_hdr;	/* Current job header structure */
 
 static int jid_compare(const void *, const void *);
+int Write_Job_recs(uint64_t, struct segment *, int);
 
 /*
  * ============================== Create_srec() =========================

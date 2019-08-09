@@ -37,7 +37,7 @@ csabuild_SOURCES = build.c \
 
 csabuild_DEPENDENCIES = @top_srcdir@/include/acctdef.h @top_srcdir@/lib/libacct.a
 
-INCLUDES = -I@top_srcdir@/include -D__USE_GNU -Dlinux
+AM_CPPFLAGS = -I@top_srcdir@/include -D__USE_GNU -Dlinux
 LIBS = @top_srcdir@/lib/libacct.a
 AM_LDFLAGS = -lm
 

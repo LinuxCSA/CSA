@@ -113,6 +113,7 @@ usage() {
 		Prg_name);
 }
 
+int
 main(int argc, char **argv)
 {
 	char	ch;
@@ -518,7 +519,7 @@ sum_rec(int rec, struct acctent *ac, double fee, int eojbyc)
 			prid  =  ac->csa->ac_prid;
 			group =  ac->csa->ac_gid;
 			jid   =  ac->csa->ac_jid;
-			sbu   = &(ac->csa->ac_sbu);
+			sbu   = (double *)&(ac->csa->ac_sbu);
 			sbuv  =  (ac->csa->ac_sbu);
 			tstamp = ac->csa->ac_btime;
 			if (db_flag >= 5) {
@@ -558,7 +559,7 @@ sum_rec(int rec, struct acctent *ac, double fee, int eojbyc)
 			 */
 			prid = getdfltprojuser(uid_to_name(uid));
 			jid  = ac->eoj->ac_jid;
-			sbu  = &(ac->eoj->ac_sbu);
+			sbu  = (double *)&ac->eoj->ac_sbu;
 			sbuv =  (ac->eoj->ac_sbu);
 			group = ac->eoj->ac_gid;
 			tstamp = ac->eoj->ac_etime;
