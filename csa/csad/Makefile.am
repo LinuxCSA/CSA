@@ -28,4 +28,4 @@ AM_CFLAGS = -D_GNU_SOURCE -Dlinux
 
 libcsad_la_SOURCES = csa_daemon.c csa_nl.c csa.c csa_job.c hash.c
 
-libcsad_la_LDFLAGS = -version-info @csalibversion@ -ljob -lnl -lrt -lcap
+libcsad_la_LDFLAGS = -version-info @csalibversion@ -ljob -lnl-3 -lrt -lcap

@@ -28,6 +28,8 @@
 #include <stdio.h>
 #include <syslog.h>
 #include <sys/socket.h>
+#include <sys/types.h>
+#include <unistd.h>
 #include <linux/genetlink.h>
 #include <linux/taskstats.h>
 #include <netlink/msg.h>
@@ -42,7 +44,7 @@ int dbg = 0;
 	syslog(level, args);		\
 }
 
-static int get_family_id(struct nl_handle *nlh);
+static int get_family_id(struct nl_sock *nls);
 static void print_delayacct(struct taskstats *t);
 
 static int family_id = -1;
@@ -50,35 +52,35 @@ static int family_id = -1;
 /*
  *  Create a raw netlink socket and bind
  */
-struct nl_handle *
+struct nl_sock *
 csa_nl_create(void)
 {
-    struct nl_handle *nlh;
+    struct nl_sock *nls;
 
-    nlh = nl_handle_alloc();
-    if (nlh) {
-	nl_disable_sequence_check(nlh);
-	nl_connect(nlh, NETLINK_GENERIC);
+    nls = nl_socket_alloc();
+    if (nls) {
+	nl_socket_disable_seq_check(nls);
+	nl_connect(nls, NETLINK_GENERIC);
 
 	if (family_id == -1) {
-	    family_id = get_family_id(nlh);
+	    family_id = get_family_id(nls);
 	    if (family_id == -1) {
-		nl_close(nlh);
-		nl_handle_destroy(nlh);
-		nlh = NULL;
+		nl_close(nls);
+		nl_socket_free(nls);
+		nls = NULL;
 	    }
 	}
     }
 
-    return nlh;
+    return nls;
 }
 
 void
-csa_nl_cleanup(struct nl_handle *nlh)
+csa_nl_cleanup(struct nl_sock *nls)
 {
-    if (nlh != NULL) {
-	nl_close(nlh);
-	nl_handle_destroy(nlh);
+    if (nls != NULL) {
+	nl_close(nls);
+	nl_socket_free(nls);
     }
 }
 
@@ -87,7 +89,7 @@ csa_nl_cleanup(struct nl_handle *nlh)
  *  for the TASKSTATS family
  */
 static int
-get_family_id(struct nl_handle *nlh)
+get_family_id(struct nl_sock *nls)
 {
     struct nlmsghdr req = {
 	.nlmsg_type = GENL_ID_CTRL
@@ -97,7 +99,7 @@ get_family_id(struct nl_handle *nlh)
 	.version = 0x1
     };
     struct nl_msg *msg = NULL;
-    fd_set nlhs;
+    fd_set nlss;
     struct timeval tv;
     struct sockaddr_nl peer;
     unsigned char *rmsg = NULL;
@@ -106,7 +108,7 @@ get_family_id(struct nl_handle *nlh)
     int sd, ret, n, len, id = -1;
     struct nlattr *nla;
 
-    msg = (struct nl_msg *) nlmsg_build(&req);
+    msg = nlmsg_inherit(&req);
 
     /* Add genetlink header */
     nlmsg_append(msg, &genlh, GENL_HDRLEN, 0);
@@ -115,31 +117,23 @@ get_family_id(struct nl_handle *nlh)
     ret = nla_put_string(msg, CTRL_ATTR_FAMILY_NAME, TASKSTATS_GENL_NAME);
     if (ret < 0)
 	goto cleanup;
-#if LIBNL_NEW_API
-    ret = nl_send_auto_complete(nlh, msg);
-#else
-    ret = nl_send_auto_complete(nlh, nlmsg_hdr(msg));
-#endif
+    ret = nl_send_auto_complete(nls, msg);
     if (ret < 0)
 	goto cleanup;
 
-    FD_ZERO(&nlhs);
-    sd = csa_nl_fd(nlh);
+    FD_ZERO(&nlss);
+    sd = csa_nl_fd(nls);
     tv.tv_sec = SELECT_TIMEOUT;
     tv.tv_usec = 0;
-    FD_SET(sd, &nlhs);
-    ret = select(sd + 1, &nlhs, 0, 0, &tv);
+    FD_SET(sd, &nlss);
+    ret = select(sd + 1, &nlss, 0, 0, &tv);
     if (ret < 0) {
 	PRINTF(LOG_ERR, "get_family_id: no response from netlink\n");
 	goto cleanup;
     }
 
     /* go ahead and receive select returns >= 0 */
-#if LIBNL_NEW_API
-    n = nl_recv(nlh, &peer, &rmsg, &creds);
-#else
-    n = nl_recv(nlh, &peer, &rmsg);
-#endif
+    n = nl_recv(nls, &peer, &rmsg, &creds);
     if (n <= 0) {
 	rmsg = NULL;
 	goto cleanup;
@@ -168,7 +162,7 @@ cleanup:
 }
 
 int
-csa_nl_cpumask(struct nl_handle *nlh, int cmd_type, char *mask)
+csa_nl_cpumask(struct nl_sock *nls, int cmd_type, char *mask)
 {
     struct nlmsghdr req = {
 	.nlmsg_type = family_id,
@@ -184,7 +178,7 @@ csa_nl_cpumask(struct nl_handle *nlh, int cmd_type, char *mask)
     if (mask == NULL)
 	return -1;
 
-    msg = (struct nl_msg *) nlmsg_build(&req);
+    msg = nlmsg_inherit(&req);
 
     /* Add genetlink header */
     nlmsg_append(msg, &genlh, GENL_HDRLEN, 0);
@@ -197,16 +191,16 @@ csa_nl_cpumask(struct nl_handle *nlh, int cmd_type, char *mask)
     }
 
 #if LIBNL_NEW_API
-    ret = nl_send_auto_complete(nlh, msg);
+    ret = nl_send_auto_complete(nls, msg);
 #else
-    ret = nl_send_auto_complete(nlh, nlmsg_hdr(msg));
+    ret = nl_send_auto_complete(nls, nlmsg_hdr(msg));
 #endif
     if (ret < 0) {
 	PRINTF(LOG_ERR, "csa_nl_cpumask: autocomplete error %d\n", ret);
 	goto cleanup;
     }
 
-    ret = nl_wait_for_ack(nlh);
+    ret = nl_wait_for_ack(nls);
     if (ret < 0) {
 	PRINTF(LOG_ERR, "csa_nl_cpumask: acknowledge error %d\n", ret);
 	goto cleanup;
@@ -223,7 +217,7 @@ cleanup:
  *  Get statistics for the specified pid/tgid
  */
 void
-csa_nl_stats(struct nl_handle *nlh, struct taskstats **task)
+csa_nl_stats(struct nl_sock *nls, struct taskstats **task)
 {
     int n;
     struct sockaddr_nl peer;
@@ -242,9 +236,9 @@ csa_nl_stats(struct nl_handle *nlh, struct taskstats **task)
     done = 0;
 
 #if LIBNL_NEW_API
-    n = nl_recv(nlh, &peer, &rmsg, &creds);
+    n = nl_recv(nls, &peer, &rmsg, &creds);
 #else
-    n = nl_recv(nlh, &peer, &rmsg);
+    n = nl_recv(nls, &peer, &rmsg);
 #endif
     if (n <= 0)
 	return;
@@ -318,11 +312,7 @@ print_delayacct(struct taskstats *t)
  *  Return the file descriptor for the netlink socket
  */
 int
-csa_nl_fd(struct nl_handle *nlh)
+csa_nl_fd(struct nl_sock *nls)
 {
-#if LIBNL_NEW_API
-    return nl_socket_get_fd(nlh);
-#else
-    return nl_handle_get_fd(nlh);
-#endif
+    return nl_socket_get_fd(nls);
 }

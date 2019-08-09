@@ -1,13 +1,16 @@
 dnl Process this file with autoconf to produce a configure script.
-AC_INIT(csa, 4.1.1)
+AC_INIT(csa, 5.1.0)
 AC_CONFIG_SRCDIR(config.h.in)
 
 dnl libtool version info
-csalibversion="4:1:0"
+csalibversion="5:1:0"
 AC_SUBST(csalibversion)
 
 dnl Automake initialization
 AM_INIT_AUTOMAKE
+
+dnl Use System Extensions
+AC_USE_SYSTEM_EXTENSIONS
 
 dnl Set distribution
 distro=`rpm --eval "%_vendor"`
@@ -63,7 +66,7 @@ AC_PATH_PROG(PERL, perl, /usr/bin/perl, \
 	/usr/bin:/sbin:/bin:/usr/sbin:$PATH:/usr/local/bin:/usr/local/gnu/bin)
 
 dnl Checks for libraries.
-AC_CHECK_LIB(nl, nl_handle_alloc, [], [
+AC_CHECK_LIB(nl-3, nl_socket_alloc, [], [
 	echo "configure: libnl required"
 	exit -1
 ])

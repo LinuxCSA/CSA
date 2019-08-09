@@ -8,7 +8,7 @@ fi
 
 BUILD_ROOT=${1}
 
-CSA_VERSION="5.0.2"
+CSA_VERSION="5.1.0"
 JOB_VERSION="3.0.1"
 
 tar -cjpf ${BUILD_ROOT}/SOURCES/job-${JOB_VERSION}.tar.bz2 job

@@ -1,4 +1,7 @@
 * Fri Aug 09 2019 Jay Lan <jay.j.lan@nasa.gov>
+- Upgraded CSA codes to new netlink API libnl3-200-3.3.0.
+
+* Fri Aug 09 2019 Jay Lan <jay.j.lan@nasa.gov>
 - Fixed Warning messages produced by gcc during compilation.
 - gcc-7-1.563.x86_64
 

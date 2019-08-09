@@ -26,15 +26,15 @@
 
 #include <netlink/netlink.h>
 
-struct nl_handle *csa_nl_create(void);
-void csa_nl_cleanup(struct nl_handle *nlh);
-int csa_nl_cpumask(struct nl_handle *nlh, int cmd_type, char *mask);
-void csa_nl_stats(struct nl_handle *nlh, struct taskstats **task);
-int csa_nl_fd(struct nl_handle *nlh);
+struct nl_sock *csa_nl_create(void);
+void csa_nl_cleanup(struct nl_sock *nls);
+int csa_nl_cpumask(struct nl_sock *nls, int cmd_type, char *mask);
+void csa_nl_stats(struct nl_sock *nls, struct taskstats **task);
+int csa_nl_fd(struct nl_sock *nls);
 
-#define csa_nl_cpumask_on(nlh, mask) \
-    csa_nl_cpumask(nlh, TASKSTATS_CMD_ATTR_REGISTER_CPUMASK, mask)
-#define csa_nl_cpumask_off(nlh, mask) \
-    csa_nl_cpumask(nlh, TASKSTATS_CMD_ATTR_DEREGISTER_CPUMASK, mask)
+#define csa_nl_cpumask_on(nls, mask) \
+    csa_nl_cpumask(nls, TASKSTATS_CMD_ATTR_REGISTER_CPUMASK, mask)
+#define csa_nl_cpumask_off(nls, mask) \
+    csa_nl_cpumask(nls, TASKSTATS_CMD_ATTR_DEREGISTER_CPUMASK, mask)
 
 #endif /* _CSA_NL_H */

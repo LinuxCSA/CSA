@@ -65,7 +65,7 @@ struct mesg_info {
     void *data;
 };
 
-static void recv_sk_nl(struct nl_handle *nlh);
+static void recv_sk_nl(struct nl_sock *nls);
 static void send_proc_exit(struct taskstats *task);
 static void send_sk_job(int sk, struct proc_exit *msg);
 static void recv_sk_job(int sk);
@@ -89,17 +89,17 @@ extern int csa_doctl(pid_t, cap_t, unsigned int, unsigned long);
 #define MASK_LEN 4096  /* size of resp_string in lib/config.c */
 
 static int lockfd = -1;
-static struct nl_handle *nlh = NULL;
+static struct nl_sock *nls = NULL;
 static int sk_nl = -1, sk_job = -1, sk_ctl = -1;
 static int job_is_active = 0;
 static int done = -1;
 static char cpumask[MASK_LEN] = "";
 
 static void
-recv_sk_nl(struct nl_handle *nlh)
+recv_sk_nl(struct nl_sock *nls)
 {
     struct taskstats *task = NULL;
-    csa_nl_stats(nlh, &task);
+    csa_nl_stats(nls, &task);
     if (task != NULL) {
 	csa_acct_eop(task);
 	send_proc_exit(task);
@@ -379,14 +379,14 @@ set_cpumask(void)
 	}
     }
 
-    return csa_nl_cpumask_on(nlh, cpumask);
+    return csa_nl_cpumask_on(nls, cpumask);
 }
 
 static int
 unset_cpumask(void)
 {
     if (strlen(cpumask))
-	return csa_nl_cpumask_off(nlh, cpumask);
+	return csa_nl_cpumask_off(nls, cpumask);
     else
 	return 0;
 }
@@ -424,11 +424,11 @@ init_csa(void)
 
     /* Create socket to communicate with netlink/taskstats. */
 
-    if ((nlh = csa_nl_create()) == NULL) {
+    if ((nls = csa_nl_create()) == NULL) {
 	PRINTF(LOG_ERR, "init_csa: netlink socket error");
 	return -1;
     }
-    sk_nl = csa_nl_fd(nlh);
+    sk_nl = csa_nl_fd(nls);
 
     /* Register taskstats CPU mask. */
 
@@ -503,9 +503,9 @@ cleanup_csa(void)
 
     unset_cpumask();
 
-    if (nlh) {
-	csa_nl_cleanup(nlh);
-	nlh = NULL;
+    if (nls) {
+	csa_nl_cleanup(nls);
+	nls = NULL;
 	sk_nl = -1;
     }
 
@@ -563,7 +563,7 @@ run_csa_daemon(void *gj)
 	}
 
 	if (FD_ISSET(sk_nl, &fds)) {
-	    recv_sk_nl(nlh);
+	    recv_sk_nl(nls);
 	    /* sk_nl gets priority over others. */
 	    continue;
 	}
