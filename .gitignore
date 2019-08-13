@@ -11,8 +11,16 @@
 */missing
 job/ltmain.sh
 job/sgi-job.feature
+job/compile
+job/stamp-h1
+*/config.h
+*/config.status
 */aclocal.m4
 */autom4te.cache/
+*/libtool
+*/Makefile
+*/*/Makefile
+*/*/*/Makefile
 */Makefile.in
 */*/Makefile.in
 */*/*/Makefile.in

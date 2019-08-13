@@ -4,7 +4,7 @@
 noinst_SCRIPTS = job
 
 DISTRO := $(shell rpmbuild --showrc | \
-		awk '$$1 == "-14:" && $$2 == "_vendor" { print $$3}')
+		awk '$$1 == "-13:" && $$2 == "_host_vendor" { print $$3}')
 
 job: job_$(DISTRO).in
 	rm -f $@

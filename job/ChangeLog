@@ -1,3 +1,7 @@
+* Mon Aug 12 2019 Jay Lan <jay.j.lan@nasa.gov>
+- job-3.0.2
+- Fixed prototype warning and errors in SLES15 environment.
+
 * Tue May 30 2017 Jay Lan <jay.j.lan@nasa.gov>
 - Fixed an issue that csad and jobd sometimes get out of sync.
 

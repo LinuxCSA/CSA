@@ -28,6 +28,8 @@
 #include <unistd.h>
 #include <errno.h>
 #include <job.h>
+#include <ctype.h>
+#include <strings.h>
 
 struct sigmap {
 	char *name;

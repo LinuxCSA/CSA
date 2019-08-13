@@ -47,7 +47,7 @@
 /* Function prototypes */
 int jidExists(jid_t injid); /* Check if JID exists using job library calls */
 int jkillHandlesSigZero(jid_t injid); /* Does jkill handle signal 0 properly? */
-int cleanup(void); /* Kills processes created */
+void cleanup(void); /* Kills processes created */
 int handlesDuplicateJids(void); /* Does job handle trying to request dupe JIDs? */
 int handlesChildJobCreate(void); /* Child tries to get its own JID */
 int parentHandlesDetachedChild(void); /* child detach shouldn't affect parent */
@@ -851,7 +851,7 @@ int createDummyProcess(int action, jid_t injid, int (*funct)()) {
  * input: none
  * return: none
  */
-cleanup(void) {
+void cleanup(void) {
 	int i;
 
 	for(i = 0 ; i < pidcount ; i++) {
